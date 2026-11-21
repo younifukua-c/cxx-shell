@@ -1,0 +1,105 @@
+/* 「文件夹与打开方式」表单；设置页与缺配置引导框共用这一份。 */
+.cxx-file-manage {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
+  max-inline-size: var(--cxx-settings-form-width, 760px);
+  margin-block-start: var(--cxx-settings-form-offset, 0px);
+}
+.cxx-file-manage-fields { display: flex; flex-direction: column; gap: var(--space-2); }
+.cxx-file-manage-panel { --cxx-panel-form-gap: var(--space-3); }
+.cxx-file-manage-title {
+  margin: 0;
+  color: var(--fg-0);
+  font-size: 15px;
+}
+.cxx-file-manage-hint {
+  margin: 0;
+  color: var(--fg-2);
+  font-size: 12px;
+}
+.cxx-file-manage-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--bg-3);
+  outline: none;
+}
+.cxx-file-manage-group.is-highlight {
+  padding: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--bg-1);
+}
+.cxx-file-manage-group-title {
+  color: var(--fg-0);
+  font-size: 14px;
+  font-weight: 500;
+}
+.cxx-file-manage-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.cxx-file-manage-label {
+  flex: 0 0 96px;
+  color: var(--fg-1);
+  font-size: 13px;
+}
+/* 一组多行的行（后缀规则）标签要对齐第一行，居中的话标签会掉到两行中间。 */
+.cxx-file-manage-row-block {
+  align-items: flex-start;
+}
+.cxx-file-manage-row-block > .cxx-file-manage-label {
+  padding-top: 6px;
+}
+.cxx-file-manage-tool {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.cxx-file-manage-tool-value {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.cxx-file-manage-tool-value code {
+  color: var(--fg-2);
+  font-size: 12px;
+  word-break: break-all;
+}
+.cxx-file-manage-rules {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.cxx-file-manage-rule {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.cxx-file-manage-rule > .cxx-field {
+  flex: 0 0 128px;
+}
+.cxx-file-manage-rule-app {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.cxx-file-manage-rule-path {
+  max-width: 240px;
+  overflow: hidden;
+  color: var(--fg-2);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

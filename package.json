@@ -1,0 +1,52 @@
+{
+  "name": "cxx-shell",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CXX独立主框架：应用外壳与桌面宿主",
+  "packageManager": "pnpm@10.14.0",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "preinstall": "node scripts/check-package-manager.mjs",
+    "start": "node scripts/start.mjs",
+    "build": "node scripts/build.mjs",
+    "typecheck": "vue-tsc --noEmit",
+    "test:unit": "node scripts/test-node.mjs unit",
+    "test:architecture": "node scripts/test-node.mjs architecture",
+    "test": "node scripts/test-browser.mjs",
+    "pack:all": "node scripts/pack.mjs",
+    "test:consumer": "node scripts/verify-consumer.mjs",
+    "start:web": "node scripts/dev.mjs",
+    "build:framework": "pnpm --filter @cxx/app-shell build",
+    "build:desktop": "node scripts/build-desktop.mjs",
+    "test:desktop": "node scripts/test-desktop.mjs",
+    "build:installer": "node scripts/build.mjs --installer",
+    "start:test": "node scripts/start.mjs --test-root=.local/manual-test"
+  },
+  "devDependencies": {
+    "@cxx/app-shell": "workspace:*",
+    "@cxx/icons": "file:vendor/cxx/cxx-icons-0.7.0.tgz",
+    "@cxx/ui": "file:vendor/cxx/cxx-ui-1.44.1.tgz",
+    "@playwright/test": "1.63.0",
+    "@types/node": "^24.0.0",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "esbuild": "0.28.2",
+    "prettier": "3.9.9",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.2",
+    "vite": "^7.1.0",
+    "vite-plugin-dts": "^4.5.4",
+    "vue": "3.5.43",
+    "vue-tsc": "^3.0.0"
+  },
+  "main": "desktop/main.cjs",
+  "productName": "CXX Shell",
+  "dependencies": {
+    "@cxx/host-runtime": "workspace:*",
+    "@cxx/scc-sdk": "file:vendor/cxx/cxx-scc-sdk-0.1.2-rc.8.tgz"
+  }
+}

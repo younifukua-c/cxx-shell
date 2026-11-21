@@ -1,0 +1,205 @@
+{
+  "name": "@cxx/host-runtime",
+  "version": "0.14.3",
+  "description": "CXX 桌面宿主：环境、存储、迁移、安装及原生应用会话",
+  "type": "commonjs",
+  "license": "UNLICENSED",
+  "main": "index.cjs",
+  "types": "index.d.cts",
+  "files": [
+    "index.cjs",
+    "index.d.cts",
+    "lib",
+    "README.md"
+  ],
+  "exports": {
+    "./resource-sources": {
+      "types": "./lib/resource-sources.d.cts",
+      "require": "./lib/resource-sources.cjs",
+      "default": "./lib/resource-sources.cjs"
+    },
+    "./account-authority": {
+      "types": "./lib/account/authority.d.cts",
+      "require": "./lib/account/authority.cjs",
+      "default": "./lib/account/authority.cjs"
+    },
+    "./account-client": {
+      "types": "./lib/account-client.d.cts",
+      "require": "./lib/account-client.cjs",
+      "default": "./lib/account-client.cjs"
+    },
+    "./account": {
+      "types": "./lib/account/desktop-account.d.cts",
+      "require": "./lib/account/desktop-account.cjs",
+      "default": "./lib/account/desktop-account.cjs"
+    },
+    "./application-access": {
+      "types": "./lib/application-access.d.cts",
+      "require": "./lib/application-access.cjs",
+      "default": "./lib/application-access.cjs"
+    },
+    "./project-initialization": {
+      "types": "./lib/project-initialization.d.cts",
+      "require": "./lib/project-initialization.cjs",
+      "default": "./lib/project-initialization.cjs"
+    },
+    "./file-previews": {
+      "types": "./lib/file-previews.d.cts",
+      "require": "./lib/file-previews.cjs",
+      "default": "./lib/file-previews.cjs"
+    },
+    "./application-runtimes": {
+      "types": "./lib/application-runtimes.d.cts",
+      "require": "./lib/application-runtimes.cjs",
+      "default": "./lib/application-runtimes.cjs"
+    },
+    "./runtime-environments": {
+      "types": "./lib/runtime-environments.d.cts",
+      "require": "./lib/runtime-environments.cjs",
+      "default": "./lib/runtime-environments.cjs"
+    },
+    "./host-activation": {
+      "types": "./lib/host-activation.d.cts",
+      "require": "./lib/host-activation.cjs",
+      "default": "./lib/host-activation.cjs"
+    },
+    "./application-modules": {
+      "types": "./lib/application-modules.d.cts",
+      "require": "./lib/application-modules.cjs",
+      "default": "./lib/application-modules.cjs"
+    },
+    "./host-channels": {
+      "types": "./lib/host-channels.d.cts",
+      "require": "./lib/host-channels.cjs",
+      "default": "./lib/host-channels.cjs"
+    },
+    "./cleanup-retry": {
+      "types": "./lib/cleanup-retry.d.cts",
+      "require": "./lib/cleanup-retry.cjs",
+      "default": "./lib/cleanup-retry.cjs"
+    },
+    "./package-snapshot": {
+      "types": "./lib/package-snapshot.d.cts",
+      "require": "./lib/package-snapshot.cjs",
+      "default": "./lib/package-snapshot.cjs"
+    },
+    ".": {
+      "types": "./index.d.cts",
+      "require": "./index.cjs",
+      "default": "./index.cjs"
+    },
+    "./files": {
+      "types": "./lib/files.d.cts",
+      "require": "./lib/files.cjs",
+      "default": "./lib/files.cjs"
+    },
+    "./environment": {
+      "types": "./lib/environment.d.cts",
+      "require": "./lib/environment.cjs",
+      "default": "./lib/environment.cjs"
+    },
+    "./storage": {
+      "types": "./lib/storage.d.cts",
+      "require": "./lib/storage.cjs",
+      "default": "./lib/storage.cjs"
+    },
+    "./kernel": {
+      "types": "./lib/kernel.d.cts",
+      "require": "./lib/kernel.cjs",
+      "default": "./lib/kernel.cjs"
+    },
+    "./instance-guard": {
+      "types": "./lib/instance-guard.d.cts",
+      "require": "./lib/instance-guard.cjs",
+      "default": "./lib/instance-guard.cjs"
+    },
+    "./browser-profile": {
+      "types": "./lib/browser-profile.d.cts",
+      "require": "./lib/browser-profile.cjs",
+      "default": "./lib/browser-profile.cjs"
+    },
+    "./close-requests": {
+      "types": "./lib/close-requests.d.cts",
+      "require": "./lib/close-requests.cjs",
+      "default": "./lib/close-requests.cjs"
+    },
+    "./preload-bridge": {
+      "types": "./lib/preload-bridge.d.cts",
+      "require": "./lib/preload-bridge.cjs",
+      "default": "./lib/preload-bridge.cjs"
+    },
+    "./migration": {
+      "types": "./lib/migration.d.cts",
+      "require": "./lib/migration.cjs",
+      "default": "./lib/migration.cjs"
+    },
+    "./migration-files": {
+      "types": "./lib/migration-files.d.cts",
+      "require": "./lib/migration-files.cjs",
+      "default": "./lib/migration-files.cjs"
+    },
+    "./migration-guard": {
+      "types": "./lib/migration-guard.d.cts",
+      "require": "./lib/migration-guard.cjs",
+      "default": "./lib/migration-guard.cjs"
+    },
+    "./request-gate": {
+      "types": "./lib/request-gate.d.cts",
+      "require": "./lib/request-gate.cjs",
+      "default": "./lib/request-gate.cjs"
+    },
+    "./installations": {
+      "types": "./lib/installations.d.cts",
+      "require": "./lib/installations.cjs",
+      "default": "./lib/installations.cjs"
+    },
+    "./installation-discovery": {
+      "types": "./lib/installation-discovery.d.cts",
+      "require": "./lib/installation-discovery.cjs",
+      "default": "./lib/installation-discovery.cjs"
+    },
+    "./installation-location": {
+      "types": "./lib/installation-location.d.cts",
+      "require": "./lib/installation-location.cjs",
+      "default": "./lib/installation-location.cjs"
+    },
+    "./application-center": {
+      "types": "./lib/application-center.d.cts",
+      "require": "./lib/application-center.cjs",
+      "default": "./lib/application-center.cjs"
+    },
+    "./application-sessions": {
+      "types": "./lib/application-sessions.d.cts",
+      "require": "./lib/application-sessions.cjs",
+      "default": "./lib/application-sessions.cjs"
+    },
+    "./application-host": {
+      "types": "./lib/application-host.d.cts",
+      "require": "./lib/application-host.cjs",
+      "default": "./lib/application-host.cjs"
+    },
+    "./electron-view-host": {
+      "types": "./lib/electron-view-host.d.cts",
+      "require": "./lib/electron-view-host.cjs",
+      "default": "./lib/electron-view-host.cjs"
+    },
+    "./system-identity": {
+      "types": "./lib/system-identity.d.cts",
+      "require": "./lib/system-identity.cjs",
+      "default": "./lib/system-identity.cjs"
+    },
+    "./system-processes": {
+      "types": "./lib/system-processes.d.cts",
+      "require": "./lib/system-processes.cjs",
+      "default": "./lib/system-processes.cjs"
+    },
+    "./application-loader": {
+      "types": "./lib/application-loader.d.cts",
+      "require": "./lib/application-loader.cjs",
+      "default": "./lib/application-loader.cjs"
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

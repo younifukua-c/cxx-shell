@@ -1,0 +1,10 @@
+.cxx-personal-center { display: grid; align-content: start; gap: 1rem; padding: 1.5rem; min-width: 0; min-height: 0; height: 100%; box-sizing: border-box; overflow: auto; color: var(--fg-0); font: 14px/1.55 var(--cxx-mono, var(--sans, sans-serif)); }
+.cxx-personal-center h1, .cxx-personal-center h2, .cxx-personal-center p { margin: 0; overflow-wrap: anywhere; }
+.cxx-personal-center > header { display: grid; gap: 8px; }
+.cxx-personal-center h1 { font-size: 22px; }
+.cxx-personal-center h2 { font-size: 16px; }
+.cxx-personal-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.cxx-personal-software { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 1rem; min-width: 0; }
+.cxx-personal-workspace { position: relative; width: 100%; height: 100%; min-height: 0; overflow: hidden; color: var(--fg-0); background: var(--bg-0); }
+.cxx-personal-workspace-status { height: 100%; position: relative; }
+.cxx-personal-workspace > .cxx-alert { margin: 1.5rem; }

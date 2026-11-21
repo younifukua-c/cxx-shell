@@ -1,0 +1,11 @@
+import type {FileSystemPort} from '../index.cjs';
+export function failure(code:string,message:string):Error & {code:string};
+export function readJson<T>(file:string,fallback:T):T;
+export function writeJson(file:string,value:unknown):void;
+export function writeContents(file:string,contents:string|Uint8Array,fileSystem?:FileSystemPort):void;
+export function initializeJson<T>(file:string,value:T):T;
+export function canonical(directory:string):string;
+export function inside(root:string,candidate:string):string;
+export function distinct(left:string,right:string):void;
+export function digest(file:string,fileSystem?:FileSystemPort):Promise<string>;
+export function presence(directory:string):'present'|'missing'|'unavailable';

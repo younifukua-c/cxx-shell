@@ -1,0 +1,84 @@
+.cxx-settings-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  max-height: 100%;
+}
+/* 设置导航的容器：行与反馈由中央的分组菜单负责，这里只给宽度之外的定位、滚动与分隔线。 */
+.cxx-settings-nav {
+  overflow: auto;
+  border-right: 1px solid var(--bg-3);
+  background: var(--bg-1);
+}
+.cxx-settings-content {
+  min-width: 0;
+  --cxx-panel-form-gap: 0px;
+  --cxx-settings-form-width: none;
+  --cxx-settings-form-offset: 0px;
+  --cxx-settings-form-block-limit: none;
+  --cxx-settings-form-overflow: visible;
+  --cxx-settings-form-gutter: 0px;
+  padding: 28px 36px;
+}
+.cxx-settings-content > .cxx-panel-form-body {
+  margin-block-start: 20px;
+  padding-inline-end: var(--space-2);
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+.cxx-settings-content[data-content-owns-scroll] > .cxx-panel-form-body {
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+  padding-inline-end: 0;
+  scrollbar-gutter: auto;
+}
+.cxx-settings-content[data-content-owns-scroll] {
+  --cxx-panel-form-rail-inset: var(--space-2);
+}
+.cxx-settings-section-heading {
+  margin-bottom: 24px;
+}
+.cxx-settings-section-heading h3 {
+  font-size: 22px;
+  margin: 0 0 8px;
+}
+.cxx-settings-appearance {
+  display: grid;
+  gap: var(--space-3);
+  max-inline-size: var(--cxx-settings-form-width);
+  margin-block-start: var(--cxx-settings-form-offset);
+}
+.cxx-settings-appearance > p { margin: 0; }
+.cxx-settings-appearance > .cxx-select { max-inline-size: 420px; }
+.cxx-settings-content .cxx-log-center {
+  padding: 0;
+  height: auto;
+  overflow: visible;
+}
+.cxx-settings-content .cxx-log-heading {
+  display: none;
+}
+@media (max-width: 620px) {
+  .cxx-settings-layout {
+    grid-template-columns: 132px minmax(0, 1fr);
+  }
+  .cxx-settings-content {
+    padding: 20px 14px;
+  }
+}
+
+/* 整页版设置：左侧「项目看板」换成设置导航、主区换成设置内容，都不使用 <dialog>。
+ * 与弹窗版共用 heading / layout / nav / content 那套类，观感一致；
+ * 区别只在于没有 ::backdrop、不 inert 主界面，窗口标题栏按钮始终可点。
+ * 这里只补"换挂载位置"需要的两条：让导航撑满侧栏那行、让内容区撑满主区。 */
+.cxx-shell-business-sidebar > .cxx-settings-nav {
+  height: 100%;
+  /* 侧栏自身已有右边框，这里去掉导航自带的，避免两根线 */
+  border-right: 0;
+  background: transparent;
+}
+.cxx-shell-main > .cxx-settings-content {
+  height: 100%;
+}

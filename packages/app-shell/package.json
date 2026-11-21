@@ -1,0 +1,58 @@
+{
+  "name": "@cxx/app-shell",
+  "version": "0.28.1",
+  "type": "module",
+  "license": "UNLICENSED",
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css",
+    "./logging": {
+      "types": "./dist/logging.d.ts",
+      "import": "./dist/logging.js",
+      "require": "./dist/logging.cjs"
+    },
+    "./dom": {
+      "types": "./dist/dom.d.ts",
+      "import": "./dist/dom.js"
+    },
+    "./titlebar": {
+      "types": "./dist/titlebar.d.ts",
+      "import": "./dist/titlebar.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "import": "./dist/runtime.js"
+    },
+    "./registry": {
+      "types": "./dist/registry.d.ts",
+      "import": "./dist/registry.js",
+      "require": "./dist/registry.cjs"
+    },
+    "./file-management": {
+      "types": "./dist/file-management.d.ts",
+      "import": "./dist/file-management.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build --config ../../scripts/library.mjs"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "dependencies": {
+    "@cxx/icons": "0.7.0",
+    "@cxx/ui": "1.44.0"
+  }
+}
