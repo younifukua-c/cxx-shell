@@ -26,7 +26,7 @@ for (const [name, folder] of [
 }
 artifacts["@cxx/ui"] =
   "file:" +
-  path.join(root, "vendor/cxx/cxx-ui-1.44.1.tgz").split(path.sep).join("/");
+  path.join(root, JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).devDependencies["@cxx/ui"].slice(5)).split(path.sep).join("/");
 artifacts["@cxx/icons"] =
   "file:" +
   path.join(root, "vendor/cxx/cxx-icons-0.7.0.tgz").split(path.sep).join("/");

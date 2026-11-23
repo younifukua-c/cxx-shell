@@ -1,6 +1,6 @@
 {
   "name": "@cxx/app-shell",
-  "version": "0.28.1",
+  "version": "0.28.2",
   "type": "module",
   "license": "UNLICENSED",
   "files": [
@@ -53,6 +53,6 @@
   },
   "dependencies": {
     "@cxx/icons": "0.7.0",
-    "@cxx/ui": "1.44.0"
+    "@cxx/ui": "1.44.2"
   }
 }

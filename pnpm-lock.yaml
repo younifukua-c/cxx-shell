@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@cxx/ui': file:vendor/cxx/cxx-ui-1.44.1.tgz
+  '@cxx/ui': file:vendor/cxx/cxx-ui-1.44.2.tgz
   '@cxx/icons': file:vendor/cxx/cxx-icons-0.7.0.tgz
 
 importers:
@@ -26,8 +26,8 @@ importers:
         specifier: file:vendor/cxx/cxx-icons-0.7.0.tgz
         version: file:vendor/cxx/cxx-icons-0.7.0.tgz
       '@cxx/ui':
-        specifier: file:vendor/cxx/cxx-ui-1.44.1.tgz
-        version: file:vendor/cxx/cxx-ui-1.44.1.tgz(vue@3.5.43(typescript@5.9.3))
+        specifier: file:vendor/cxx/cxx-ui-1.44.2.tgz
+        version: file:vendor/cxx/cxx-ui-1.44.2.tgz(vue@3.5.43(typescript@5.9.3))
       '@playwright/test':
         specifier: 1.63.0
         version: 1.63.0
@@ -74,8 +74,8 @@ importers:
         specifier: file:../../vendor/cxx/cxx-icons-0.7.0.tgz
         version: file:vendor/cxx/cxx-icons-0.7.0.tgz
       '@cxx/ui':
-        specifier: file:../../vendor/cxx/cxx-ui-1.44.1.tgz
-        version: file:vendor/cxx/cxx-ui-1.44.1.tgz(vue@3.5.43(typescript@6.0.3))
+        specifier: file:../../vendor/cxx/cxx-ui-1.44.2.tgz
+        version: file:vendor/cxx/cxx-ui-1.44.2.tgz(vue@3.5.43(typescript@6.0.3))
       vue:
         specifier: ^3.5.0
         version: 3.5.43(typescript@6.0.3)
@@ -156,9 +156,9 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
-  '@cxx/ui@file:vendor/cxx/cxx-ui-1.44.1.tgz':
-    resolution: {integrity: sha512-WvIVWqVyEpbqYjw+Hmxo6OUPSNTMuVS4vXuAs5K/Yg5o40GXpXYa5XheM44JiFqnxHhNLWGf93VUoylKrVwHuw==, tarball: file:vendor/cxx/cxx-ui-1.44.1.tgz}
-    version: 1.44.1
+  '@cxx/ui@file:vendor/cxx/cxx-ui-1.44.2.tgz':
+    resolution: {integrity: sha512-PH+kN6wmthRDYkBu/2AbTJClU2FcsgpNkHFZ5qD75FXhvLJNdHD7QkYMnXhTjBecFP8q4TDA5N6Alp6NuU80nA==, tarball: file:vendor/cxx/cxx-ui-1.44.2.tgz}
+    version: 1.44.2
     peerDependencies:
       vue: ^3.5.0
     peerDependenciesMeta:
@@ -2429,7 +2429,7 @@ snapshots:
       jose: 6.2.12
       oauth4webapi: 3.8.8
 
-  '@cxx/ui@file:vendor/cxx/cxx-ui-1.44.1.tgz(vue@3.5.43(typescript@5.9.3))':
+  '@cxx/ui@file:vendor/cxx/cxx-ui-1.44.2.tgz(vue@3.5.43(typescript@5.9.3))':
     dependencies:
       '@codemirror/autocomplete': 6.20.4
       '@codemirror/commands': 6.11.1
@@ -2449,7 +2449,7 @@ snapshots:
     optionalDependencies:
       vue: 3.5.43(typescript@5.9.3)
 
-  '@cxx/ui@file:vendor/cxx/cxx-ui-1.44.1.tgz(vue@3.5.43(typescript@6.0.3))':
+  '@cxx/ui@file:vendor/cxx/cxx-ui-1.44.2.tgz(vue@3.5.43(typescript@6.0.3))':
     dependencies:
       '@codemirror/autocomplete': 6.20.4
       '@codemirror/commands': 6.11.1
