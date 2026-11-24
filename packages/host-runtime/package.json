@@ -1,6 +1,6 @@
 {
   "name": "@cxx/host-runtime",
-  "version": "0.14.4",
+  "version": "0.14.5",
   "description": "CXX 桌面宿主：环境、存储、迁移、安装及原生应用会话",
   "type": "commonjs",
   "license": "UNLICENSED",
