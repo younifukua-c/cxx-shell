@@ -9,4 +9,4 @@ const applicationRoot = process.argv
   ?.slice("--application-root=".length);
 if (applicationRoot)
   process.env.CXX_SHELL_APPLICATION_ROOT = path.resolve(applicationRoot);
-process.exitCode = await runIsolatedTest(["--test", file, path.resolve(import.meta.dirname, "../tests/desktop/branding.test.cjs")], 240000);
+process.exitCode = await runIsolatedTest(["--test", file, path.resolve(import.meta.dirname, "../tests/desktop/branding.test.cjs"), path.resolve(import.meta.dirname, "../tests/desktop/product-access.test.cjs")], 240000);

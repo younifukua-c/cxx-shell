@@ -62,6 +62,32 @@ try {
     userId: "consumer",
   });
   assert.equal(environment.mode, "test");
+
+  const modules = require('@cxx/host-runtime/application-modules').createApplicationModules(environment);
+  for (const [id, name, productCode] of [
+    ['source-derived', 'cxx-repodock', 'cxx-repodock'], ['deploy-flow', 'cxx-deploy-flow', 'deploy-flow'],
+  ]) {
+    const root = path.join(temp, id); fs.mkdirSync(root);
+    fs.writeFileSync(path.join(root, 'entry.cjs'), 'exports.createApplication=()=>({})');
+    fs.writeFileSync(path.join(root, 'preload.cjs'), '');
+    const pkg = { name, version: '1.0.0', cxxApplication: {
+      id, name, productCode, entry: 'entry.cjs', preload: 'preload.cjs',
+    } };
+    const file = path.join(root, 'package.json'); fs.writeFileSync(file, JSON.stringify(pkg));
+    const inspect = require('@cxx/host-runtime/installation-discovery').inspectApplication;
+    modules.register(inspect(root));
+    const recordFile = runtime.createStorage(environment).file('settings', 'common', 'host-runtime', 'modules/' + id + '.json');
+    const old = JSON.parse(fs.readFileSync(recordFile)); old.module.productCode = name;
+    delete old.module.productCodeSource; fs.writeFileSync(recordFile, JSON.stringify(old));
+    const before = fs.readFileSync(recordFile, 'utf8');
+    assert.equal(modules.list().find(item => item.id === id).productCode, productCode);
+    assert.equal(modules.resolve(id).id, id);
+    assert.equal(fs.readFileSync(recordFile, 'utf8'), before);
+    modules.register(inspect(root)); pkg.cxxApplication.productCode = 'changed-product';
+    fs.writeFileSync(file, JSON.stringify(pkg));
+    assert.throws(() => modules.resolve(id), { code: 'MODULE_CHANGED' });
+  }
+
   const manifest = JSON.parse(
     fs.readFileSync(
       path.join(

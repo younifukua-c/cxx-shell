@@ -4,7 +4,7 @@ const { inside, readJson, failure } = require('./files.cjs');
 const MAX_METADATA_BYTES = 1024 * 1024;
 const MAX_ICON_BYTES = 512 * 1024;
 
-/** 产品编码只读安装清单的包名，不采用内部应用 ID 或外部传入的编码覆盖。 */
+/** 中央产品编码由可信安装声明明确提供；旧软件未声明时保留原应用ID契约。 */
 function applicationBranding(root, id) {
     const file = inside(root, path.join(root, 'package.json'));
     let pkg;
@@ -14,15 +14,17 @@ function applicationBranding(root, id) {
             throw failure('APPLICATION_MANIFEST_INVALID', '应用声明不可读取，请检查安装是否完整');
         pkg = readJson(file, {});
     } catch (error) { if (error.code !== 'ENOENT') throw error; }
-    const productCode = pkg?.name || id;
-    if (!/^(?:@[a-z0-9._-]+\/)?[a-z0-9][a-z0-9._-]{0,99}$/.test(productCode))
-        throw failure('MODULE_DEFINITION_INVALID', '应用包名不能作为产品编码，请核对软件声明');
+    const declaredCode = pkg?.cxxApplication?.productCode;
+    const productCode = declaredCode === undefined ? id : declaredCode;
+    if (typeof productCode !== 'string' || !/^(?:@[a-z0-9._-]+\/)?[a-z0-9][a-z0-9._-]{0,99}$/.test(productCode))
+        throw failure('MODULE_DEFINITION_INVALID', '中央产品编码无效，请核对软件安装声明');
     // 旧产品已使用此构建资源约定；显式声明优先，不要求拷贝品牌文件。
     const declared = pkg?.cxxApplication?.icon;
-    const iconPath = declared === undefined ? 'build/' + productCode.replace(/^@/, '').replace('/', '-') + '-icon.png' : declared;
+    const packageName = typeof pkg?.name === 'string' ? pkg.name : id;
+    const iconPath = declared === undefined ? 'build/' + packageName.replace(/^@/, '').replace('/', '-') + '-icon.png' : declared;
     if (typeof iconPath !== 'string') throw failure('MODULE_ICON_INVALID', '应用图标路径无效');
     const icon = inside(root, path.resolve(root, iconPath));
-    return { productCode, ...(fs.existsSync(icon) && path.extname(icon).toLowerCase() === '.png'
+    return { productCode, productCodeSource: pkg?.cxxApplication?.productCode === undefined ? 'legacy-id' : 'manifest', ...(fs.existsSync(icon) && path.extname(icon).toLowerCase() === '.png'
         ? { iconPath: path.relative(root, icon) } : {}) };
 }
 

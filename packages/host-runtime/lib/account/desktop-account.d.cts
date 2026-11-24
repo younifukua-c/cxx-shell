@@ -6,6 +6,8 @@ export interface AccountApplication {
   id: string;
   name: string;
   productCode?: string;
+  /** 由可信模块目录解析的来源，无来源的外部字段不能替代安装声明。 */
+  productCodeSource?: 'manifest' | 'legacy-id';
   infrastructure?: boolean;
   demo?: boolean;
   external?: boolean;

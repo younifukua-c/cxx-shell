@@ -16,7 +16,7 @@
 
 应用目录通过公开清单描述 id、版本、工厂、preload 和可选 runtimePackages。加入只检查元数据与摘要，不执行代码；打开时根据宿主可信视图身份重新核验资格和摘要，再调用工厂。更新需要核对令牌，文件再次变化则拒绝确认。外部声明不能将自己标成基础设施以绕过资格。
 
-中央产品编码只读安装目录 package.json.name，与内部应用 ID 独立。旧登记在唯一读取适配层补齐产品编码和品牌，不回写资料或改变 ID；新登记及更新核对将这些字段与入口摘要一起绑定。Renderer 不能指定产品编码或基础设施资格。
+中央产品编码由可信安装目录 package.json.cxxApplication.productCode 明确提供，与包名及内部应用 ID 独立。源·派生的声明为 cxx-repodock，部署流为 deploy-flow；产品声明是唯一映射来源，宿主不维护软件特例表。未声明的旧产品保留原应用 ID 契约。上一版无 productCodeSource 的推断登记在唯一读取适配层补齐正确编码，不回写资料或改变 ID；新登记及更新核对将编码与入口摘要一起绑定。Renderer 与外部登记参数不能覆盖产品编码或基础设施资格。
 
 软件可在 package.json.cxxApplication.icon 声明目录内 PNG；旧产品兼容 build/<包名>-icon.png 约定。图标受根目录、PNG 签名和大小约束，缺失时使用 Shell 回退。菜单的有界数据 URL 和子窗口本地路径来自同一资源。Shell 使用已安装 @cxx/icons 的 38-workspace，构建时由现有浏览器工具生成窗口 PNG，不新增手绘副本。开发、打包均调用同一窗口装配入口。
 

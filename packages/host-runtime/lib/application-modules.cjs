@@ -18,13 +18,13 @@ function createApplicationModules(environment) {
         if(value.schemaVersion!==1||value.owner!==environment.owner||value.environmentId!==environment.id||value.module?.id!==id)throw failure('MODULE_REGISTRY_INVALID','应用模块登记无法核对，原资料已保留');
         const record=value.module;
         // 单一兼容入口为旧登记补展示元数据，不改 ID、不写回或搬动资料。
-        return record.productCode ? record : {...record,...applicationBranding(record.root,record.id)};
+        return record.productCodeSource ? record : {...record,...applicationBranding(record.root,record.id)};
     };
     const list=()=>{
         if(!fs.existsSync(directory))return [];
         const names=fs.readdirSync(directory).filter(name=>/^[a-z][a-z0-9-]{0,63}\.json$/.test(name)).sort();
         if(names.length>MAX_MODULES)throw failure('MODULE_LIMIT','应用模块数量超过上限');
-        return names.map(name=>{const record=read(name.slice(0,-5));return {...presentApplication(record),external:true,infrastructure:false,demo:false};});
+        return names.map(name=>{const record=read(name.slice(0,-5));const branding=applicationBranding(record.root,record.id);return {...presentApplication({...record,...branding}),external:true,infrastructure:false,demo:false};});
     };
     const persist=record=>writeJson(key(record.id),{schemaVersion:1,owner:environment.owner,environmentId:environment.id,module:record});
     const registered=id=>{const record=read(id);if(!record)throw failure('MODULE_NOT_REGISTERED','此应用尚未登记，请从其正式入口启动一次');return record;};

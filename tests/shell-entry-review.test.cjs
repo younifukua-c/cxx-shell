@@ -21,7 +21,7 @@ function fixture(t) {
     fs.writeFileSync(path.join(dir, 'preload.cjs'), '');
     if (icon) fs.writeFileSync(path.join(dir, icon), png);
     fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
-      name, version: '1.0.0', cxxApplication: { id, entry: 'entry.cjs', preload: 'preload.cjs', icon },
+      name, version: '1.0.0', cxxApplication: { id, productCode: name, entry: 'entry.cjs', preload: 'preload.cjs', icon },
     }));
     modules.register(inspectApplication(dir)); return dir;
   };
@@ -34,13 +34,12 @@ test('应用内部 ID 与中央产品编码独立，保留旧登记和真实软�
   const moduleFile = runtime.createStorage(f.environment).file('settings', 'common', 'host-runtime', 'modules/source-derived.json');
   // 已有登记不要求用户重新加入，也不改内部 ID 或写回资料。
   const old = JSON.parse(fs.readFileSync(moduleFile));
-  delete old.module.productCode; delete old.module.iconPath;
+  delete old.module.productCode; delete old.module.productCodeSource; delete old.module.iconPath;
   fs.writeFileSync(moduleFile, JSON.stringify(old)); const before = fs.readFileSync(moduleFile, 'utf8');
   const [entry] = f.modules.list();
   const manifestFile = path.join(dir, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(manifestFile));
-  pkg.cxxApplication.productCode = 'different-free-product';
-  fs.writeFileSync(manifestFile, JSON.stringify(pkg));
+  // 外部参数不覆盖从安装清单读取的产品编码。
   assert.equal(entry.id, 'source-derived');
   assert.equal(entry.productCode, 'cxx-repodock');
   assert.match(entry.icon, /^data:image\/png;base64,/);
@@ -48,8 +47,9 @@ test('应用内部 ID 与中央产品编码独立，保留旧登记和真实软�
   assert.equal(f.modules.resolve(entry.id).id, entry.id);
   assert.equal(fs.readFileSync(moduleFile, 'utf8'), before);
   // 新登记绑定产品编码，安装包身份变更必须经过已有更新核对。
-  f.modules.register(inspectApplication(dir));
-  pkg.name = 'changed-product'; fs.writeFileSync(manifestFile, JSON.stringify(pkg));
+  f.modules.register({ ...inspectApplication(dir), productCode: 'forged-product' });
+  assert.equal(f.modules.list()[0].productCode, 'cxx-repodock');
+  pkg.cxxApplication.productCode = 'changed-product'; fs.writeFileSync(manifestFile, JSON.stringify(pkg));
   assert.throws(() => f.modules.resolve(entry.id), { code: 'MODULE_CHANGED' });
 });
 

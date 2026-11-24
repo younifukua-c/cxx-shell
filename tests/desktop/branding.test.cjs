@@ -19,6 +19,7 @@ for (const packaged of [false, true]) test(
     const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=', 'base64');
     for (const [id, name, icon] of [
       ['source-derived', 'cxx-repodock', fs.readFileSync(path.resolve('desktop/dist/shell-icon.png'))],
+      ['deploy-flow', 'cxx-deploy-flow', png],
       ['other-app', 'other-product', png], ['missing-icon', 'missing-product', null],
     ]) {
       const root = path.join(data, id); fs.mkdirSync(root);
@@ -27,7 +28,7 @@ for (const packaged of [false, true]) test(
         "exports.createApplication=async()=>({load:view=>view.webContents.loadURL('data:text/html,<h1>Opened application</h1>'),dispose:async()=>{}})");
       if (icon) fs.writeFileSync(path.join(root, 'brand.png'), icon);
       fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ name, productName: name,
-        version: '1.0.0', cxxApplication: { id, entry: 'entry.cjs', preload: 'preload.cjs', icon: 'brand.png' } }));
+        version: '1.0.0', cxxApplication: { id, productCode: id === 'source-derived' ? 'cxx-repodock' : id, entry: 'entry.cjs', preload: 'preload.cjs', icon: 'brand.png' } }));
       modules.register(inspectApplication(root));
     }
     const server = http.createServer((request, response) => {
@@ -36,7 +37,7 @@ for (const packaged of [false, true]) test(
       const selected = url.searchParams.getAll('productCodes').flatMap(value => value.split(','));
       codes.push(...selected);
       response.setHeader('Content-Type', 'application/json');
-      response.end(JSON.stringify(selected.filter(code => code === 'cxx-repodock').map(productCode =>
+      response.end(JSON.stringify(selected.filter(code => ['cxx-repodock', 'deploy-flow'].includes(code)).map(productCode =>
         ({ productCode, name: 'RepoDock', mode: 'FREE', version: '-1' }))));
     });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -60,7 +61,7 @@ for (const packaged of [false, true]) test(
       assert.equal(apps.find(item => item.id === 'source-derived').productCode, 'cxx-repodock');
       assert.notEqual(apps[0].icon, apps[1].icon);
       await page.getByRole('button', { name: '切换应用', exact: true }).click();
-      for (const name of ['cxx-repodock', 'other-product', 'missing-product']) {
+      for (const name of ['cxx-repodock', 'cxx-deploy-flow', 'other-product', 'missing-product']) {
         const menuItem = page.getByRole('option', { name, exact: true });
         await expect(menuItem).toBeVisible();
         const image = menuItem.locator('img').first();
@@ -78,6 +79,10 @@ for (const packaged of [false, true]) test(
       assert.equal(opened.success, true, JSON.stringify(opened));
       assert.ok(codes.includes('cxx-repodock'));
       assert.equal(codes.includes('source-derived'), false);
+      const deployed = await page.evaluate(() => window.cxxHost.request({ action: 'open', applicationId: 'deploy-flow' }));
+      assert.equal(deployed.success, true, JSON.stringify(deployed));
+      assert.ok(codes.includes('deploy-flow'));
+      assert.equal(codes.includes('cxx-deploy-flow'), false);
       const denied = await page.evaluate(() => window.cxxHost.request({ action: 'open', applicationId: 'other-app' }));
       assert.equal(denied.success, false);
     } finally { await closeApp(app, { force: true }); }
