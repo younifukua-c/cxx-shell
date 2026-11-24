@@ -25,7 +25,7 @@ function createDesktopAccount({ electron, environment, configuration, createProv
             onChanged: () => { if (!disposed) { access.reset(); onChanged({ kind: 'account' }); } } });
     }).catch(error => { providerTask = undefined; throw error; });
     const provider = { check: async (ids, signal) => (await session()).check(ids, signal) };
-    const available = () => [...registered.values()].filter(item => !item.infrastructure && !item.demo).map(item => item.id);
+    const available = () => [...registered.values()].filter(item => !item.infrastructure && !item.demo && !item.unavailable).map(item => item.id);
     access = createApplicationAccess({ provider,
         onChanged: (ids, reason) => {
             if (disposed) return;
@@ -63,6 +63,7 @@ function createDesktopAccount({ electron, environment, configuration, createProv
     /** 当前展示状态来自独立资格控制器，不能复用旧的允许结果。 */
     function status(id) {
         if (disposed || !registered.has(id)) return { allowed: false, reason: disposed ? 'CLOSED' : 'APPLICATION_UNKNOWN' };
+        if (registered.get(id).unavailable) return { allowed: false, reason: 'MODULE_UNAVAILABLE' };
         return infrastructure(id) ? { allowed: true, reason: 'FREE' } : access.status(id);
     }
 
@@ -146,12 +147,13 @@ function createDesktopAccount({ electron, environment, configuration, createProv
             return { ...snapshot, issue, software: snapshot.software.map(item => {
                 const permission = status(item.applicationId);
                 return { ...item, allowed: permission.allowed, reasonCode: permission.reason,
-                    reason: issue ? issue.message : item.reason };
+                    reason: registered.get(item.applicationId)?.unavailable?.message || (issue ? issue.message : item.reason) };
             }) };
         },
         /** 每个业务动作重新核验；基建、登录、购买与草稿恢复不依赖软件订阅。 */
         async require(id) {
             updateApplications();
+            if (registered.get(id)?.unavailable) throw Object.assign(Error(registered.get(id).unavailable.message), { code: 'MODULE_UNAVAILABLE' });
             if (infrastructure(id)) return;
             try { await access.require(id); }
             catch (error) {

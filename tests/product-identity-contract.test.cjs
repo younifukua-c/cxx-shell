@@ -138,3 +138,23 @@ test('直接旧登记后来增加同版本package声明仍可解析，版本与�
   pkg.version = '1.1.0'; fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify(pkg));
   assert.throws(() => f.modules.resolve('legacy-app'), { code: 'MODULE_CHANGED' });
 });
+
+test('单个部署流安装目录被重定向时隔离故障，源派生及公共账户仍可操作', async t => {
+  const f = fixture(t), source = path.join(f.root, 'deploy-flow'), moved = path.join(f.root, 'moved-deploy');
+  fs.renameSync(source, moved);
+  fs.symlinkSync(moved, source, process.platform === 'win32' ? 'junction' : 'dir');
+  const entries = f.modules.list();
+  const broken = entries.find(item => item.id === 'deploy-flow');
+  assert.equal(broken.root, source);
+  assert.equal(broken.unavailable.code, 'MODULE_UNAVAILABLE');
+  assert.match(broken.unavailable.message, /安装位置/);
+  assert.equal(f.modules.resolve('source-derived').id, 'source-derived');
+  assert.throws(() => f.modules.resolve('deploy-flow'), { code: 'MODULE_IDENTITY_CHANGED' });
+  const a = await accountFixture(t, f.environment, f.modules.list);
+  await a.account.require('source-derived');
+  await assert.rejects(a.account.require('deploy-flow'), { code: 'MODULE_UNAVAILABLE' });
+  const snapshot = await a.account.snapshot();
+  assert.equal(snapshot.software.find(item => item.applicationId === 'source-derived').allowed, true);
+  assert.equal(snapshot.software.find(item => item.applicationId === 'deploy-flow').allowed, false);
+  assert.equal(a.seen.includes('deploy-flow'), false);
+});

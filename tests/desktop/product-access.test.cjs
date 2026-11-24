@@ -39,9 +39,19 @@ test('真实Shell正常入口匿名打开实际RepoDock与部署流，切回保�
     await expect.poll(() => app.context().pages().find(page => page.url().endsWith('/index.html'))?.url()).toBeTruthy();
     const shell = app.context().pages().find(page => page.url().endsWith('/index.html'));
     await expect(shell.getByRole('heading', { name: '应用中心', exact: true })).toBeVisible();
-    for (const [id, code] of [['source-derived', 'cxx-repodock'], ['deploy-flow', 'deploy-flow']]) {
-      const result = await shell.evaluate(id => window.cxxHost.request({ action: 'open', applicationId: id }), id);
-      assert.equal(result.success, true, JSON.stringify(result));
+    let current = shell;
+    for (const [id, code, name] of [['source-derived', 'cxx-repodock', '源·派生'], ['deploy-flow', 'deploy-flow', '部署流']]) {
+      await current.locator('.cxx-shell-switch button').first().click();
+      await current.getByText(name, { exact: true }).last().click();
+      await expect.poll(() => app.context().pages().find(page => id === 'source-derived'
+        ? page.url().endsWith('/src/index.html') : /^http:\/\/127\.0\.0\.1:/.test(page.url()))?.url(), { timeout: 60000 }).toBeTruthy();
+      current = app.context().pages().find(page => id === 'source-derived'
+        ? page.url().endsWith('/src/index.html') : /^http:\/\/127\.0\.0\.1:/.test(page.url()));
+      await expect(current.locator('.cxx-shell-switch button').first()).toBeVisible({ timeout: 30000 });
+      if (id === 'source-derived') {
+        await current.getByRole('button', { name: '稍后配置', exact: true }).click();
+        await expect(current.locator('#onboarding-modal')).toBeHidden();
+      }
       const account = await shell.evaluate(() => window.cxxHost.account.request({ action: 'account-read' }));
       assert.equal(account.value.identity, null);
       assert.equal(account.value.software.find(item => item.applicationId === id).allowed, true);
@@ -50,8 +60,16 @@ test('真实Shell正常入口匿名打开实际RepoDock与部署流，切回保�
     const deployed = app.context().pages().find(page => /^http:\/\/127\.0\.0\.1:/.test(page.url()));
     assert.ok(deployed, '部署流应通过实际工厂进入本次独立后台工作区');
     await expect(deployed.locator('body')).toContainText('部署流');
-    const returned = await shell.evaluate(() => window.cxxHost.request({ action: 'open', applicationId: 'source-derived' }));
-    assert.equal(returned.success, true);
+    await deployed.locator('.cxx-shell-switch button').first().click();
+    await expect(deployed.getByText('源·派生', { exact: true }).last()).toBeVisible();
+    await expect(deployed.getByText('部署流', { exact: true }).last()).toBeVisible();
+    await deployed.getByText('源·派生', { exact: true }).last().click();
+    const source = app.context().pages().find(page => page.url().endsWith('/src/index.html'));
+    await expect.poll(() => source.evaluate(() => document.visibilityState)).toBe('visible');
+    await source.locator('.cxx-shell-switch button').first().click();
+    await expect(source.getByText('部署流', { exact: true }).last()).toBeVisible();
+    await expect(source.getByText('源·派生', { exact: true }).last()).toBeVisible();
+    assert.equal(await app.evaluate(({ BaseWindow }) => BaseWindow.getAllWindows().length), 1);
     const metadata = await shell.evaluate(() => window.cxxHost.request({ action: 'metadata' }));
     assert.equal(metadata.value.sessions.filter(item => item.applicationId === 'source-derived').length, 1);
     assert.equal(metadata.value.sessions.filter(item => item.applicationId === 'deploy-flow').length, 1);

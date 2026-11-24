@@ -11,6 +11,8 @@ export interface AccountApplication {
   infrastructure?: boolean;
   demo?: boolean;
   external?: boolean;
+  /** 安装异常的软件不进入资格查询，仍保留自身恢复说明。 */
+  unavailable?: {code: string; message: string};
 }
 /** 认证服务和官网的非秘密固定地址。 */
 export interface AccountConnection {

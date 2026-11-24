@@ -36,7 +36,7 @@ function createCatalog(environment) {
     status(id)?.enabled !== false && status(id)?.installed !== false;
   const list = () => [
     { id: SHELL_ID, name: "应用中心", infrastructure: true, enabled: true },
-    ...modules.list().map((item) => ({ ...item, enabled: enabled(item.id) })),
+    ...modules.list().map((item) => ({ ...item, installed: status(item.id)?.installed !== false, configuredEnabled: !item.unavailable && status(item.id)?.enabled !== false, enabled: !item.unavailable && enabled(item.id) })),
   ];
   const save = (next) => {
     writeJson(file, next);
@@ -93,7 +93,7 @@ function createCatalog(environment) {
     },
     canOpen: (id) =>
       id === SHELL_ID ||
-      modules.list().some((item) => item.id === id && enabled(id)),
+      modules.list().some((item) => item.id === id && !item.unavailable && enabled(id)),
     installation: () => ({
       directory:
         state.installationRoot || path.join(environment.root, "installation"),

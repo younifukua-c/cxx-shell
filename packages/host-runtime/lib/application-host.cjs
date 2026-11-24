@@ -30,12 +30,12 @@ function createApplicationHost({viewHost,applications,beforeOpen=async()=>{},can
             const current = active.get(id);
             if (current) await viewHost.focus(current, session(id).windowId);
         },
-        async open(id,{windowId}={}) {
+        async open(id,{windowId,activate=true}={}) {
             if(opening.has(id)) return opening.get(id);
             const task=Promise.resolve().then(async()=>{
                 await beforeOpen(id);
                 const entry=get(id),existing=active.get(id);
-                if(existing) {await viewHost.focus(existing,session(id).windowId);return session(id);}
+                if(existing) {if(activate)await viewHost.focus(existing,session(id).windowId);return session(id);}
                 const target=windowId===undefined?await viewHost.createWindow(id):windowId;
                 let current;
                 try {
@@ -45,7 +45,7 @@ function createApplicationHost({viewHost,applications,beforeOpen=async()=>{},can
                     await viewHost.attach(current,target);
                     await entry.load(view);
                     if(disposed)throw failure('HOST_CLOSED','加载期间宿主已退出');
-                    await viewHost.confirm(current,target);await viewHost.focus(current,target);
+                    await viewHost.confirm(current,target);if(activate)await viewHost.focus(current,target);
                     return session(id);
                 } catch(error) {
                     if(current) {

@@ -14,7 +14,8 @@ function registerController({
   closeApplication,
 }) {
   const handlers = [],
-    signIns = new Map();
+    signIns = new Map(),
+    activations = new Map();
   const handle = (channel, action) => {
     electron.ipcMain.handle(channel, async (event, input) => {
       if (
@@ -138,9 +139,20 @@ function registerController({
     if (input.action === "open") {
       ensureApplication(id);
       const own = host.list().find((item) => item.applicationId === principal);
-      await host.open(id, { windowId: own.windowId });
-      notify();
-      return { success: true };
+      const activation = {};
+      activations.set(own.windowId, activation);
+      try {
+        await host.open(id, { windowId: own.windowId, activate: false });
+        if (activations.get(own.windowId) === activation) {
+          await host.focus(id);
+          const target = host.contents(id);
+          if (target && !target.isDestroyed()) target.send(C.APPLICATION_HOST_CHANGED, { kind: "application-activated", applicationId: id });
+        }
+        notify();
+        return { success: true };
+      } finally {
+        if (activations.get(own.windowId) === activation) activations.delete(own.windowId);
+      }
     }
     if (input.action === "split")
       return { success: true, value: await host.split(principal) };
@@ -197,6 +209,7 @@ function registerController({
   return () => {
     for (const pending of signIns.values()) pending.controller.abort();
     signIns.clear();
+    activations.clear();
     for (const channel of handlers) electron.ipcMain.removeHandler(channel);
   };
 }

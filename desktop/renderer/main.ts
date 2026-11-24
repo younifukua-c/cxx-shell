@@ -86,9 +86,11 @@ async function refresh() {
     const title = document.createElement("h2");
     title.textContent = item.name;
     const details = document.createElement("p");
-    details.textContent = "版本 " + item.version;
+    details.textContent = item.unavailable?.message || "版本 " + item.version;
     const open = createButton({
       label: "打开 " + item.name,
+      disabled: !!item.unavailable,
+      help: item.unavailable ? { purpose: item.unavailable.message } : undefined,
       onClick: () =>
         request("open", { applicationId: item.id }).catch((error) => {
           report(error);

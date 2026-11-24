@@ -146,3 +146,13 @@
   min-height: 0;
   min-width: 0;
 }
+
+.cxx-shell-opening-sidebar,
+.cxx-shell-opening-main {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+  padding: var(--space-4);
+  box-sizing: border-box;
+}

@@ -1,4 +1,4 @@
-import { createApp, h, ref, watch } from 'vue';
+import { createApp, h, ref, watch, nextTick } from 'vue';
 import { uiStyles } from '@cxx/ui/styles';
 import { createViewScope, installIconStates } from '@cxx/ui/dom';
 import type { ThemeName } from '@cxx/ui';
@@ -121,6 +121,28 @@ export function mountDomShell(host: HTMLElement, options: DomShellOptions) {
     ids.has(options.initialApp || '') ? options.initialApp! : options.apps[0]!.id,
   );
   const links = ref<DomApplicationLink[]>([]);
+  const openingApplication = ref<string>();
+  const openingTasks = new Map<string, Promise<void>>();
+  let openingRevision = 0;
+  /** 同一软件复用在途加载，画面只跟随最近一次选择，失败恢复原节点。 */
+  function openApplicationLink(id: string) {
+    const revision = ++openingRevision;
+    openingApplication.value = [...options.apps, ...links.value].find(item => item.id === id)?.name;
+    chrome.value?.showApplication();
+    let task = openingTasks.get(id);
+    if (!task) {
+      task = nextTick().then(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())))
+        .then(() => { if (!destroyed) return options.onApplicationLink?.(id); });
+      openingTasks.set(id, task);
+      const release = () => { if (openingTasks.get(id) === task) openingTasks.delete(id); };
+      void task.then(release, release);
+    }
+    return task.catch(error => {
+      if (!destroyed && revision === openingRevision) options.onError(error);
+    }).finally(() => {
+      if (!destroyed && revision === openingRevision) openingApplication.value = undefined;
+    });
+  }
   /** 整批校验通过才发布入口；失败保留上一份列表。 */
   function setApplicationLinks(value: readonly DomApplicationLink[]) {
     if (destroyed) throw new Error("外壳已销毁");
@@ -190,12 +212,15 @@ export function mountDomShell(host: HTMLElement, options: DomShellOptions) {
     const linked = links.value.some(item => item.id === id);
     if (!linked && !ids.has(id)) throw new Error(`未注册的应用：${id}`);
     // 宿主已激活当前软件时先撤下账户页面；资格未就绪仍由业务区遮罩保护。
-    if (!linked && id === current.value) { chrome.value?.showApplication(); return; }
+    if (!linked && id === current.value) {
+      chrome.value?.showApplication();
+      if (openingApplication.value) return openApplicationLink(options.initialApp || options.apps[0]!.id);
+      return;
+    }
     if (chrome.value && !chrome.value.requestApplication(id)) return;
     if (linked) {
       chrome.value?.closeAccount();
-      Promise.resolve().then(() => { if (!destroyed) return options.onApplicationLink?.(id); }).catch(error => { if (!destroyed) options.onError(error); });
-      return;
+      return openApplicationLink(id);
     }
     chrome.value?.showApplication();
     if (id === current.value) return;
@@ -230,6 +255,7 @@ export function mountDomShell(host: HTMLElement, options: DomShellOptions) {
           onViewChange: changeView,
           current: current.value,
           appName: app.name,
+          openingApplication: openingApplication.value,
           applicationLinkIds: links.value.map(item => item.id),
           onApplicationLink: selectApp,
           sidebarMinWidth: app.sidebarMinWidth,
@@ -318,6 +344,8 @@ export function mountDomShell(host: HTMLElement, options: DomShellOptions) {
   function destroy() {
     if (destroyed) return;
     destroyed = true;
+    openingRevision++;
+    openingTasks.clear();
     shellScope.destroy();
     for (const scope of [...appScopes.values(), ...settingScopes.values()]) scope.destroy();
     releaseAppearance();

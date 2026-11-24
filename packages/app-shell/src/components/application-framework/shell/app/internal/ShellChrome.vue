@@ -6,6 +6,8 @@ import { createMemoryLogClient, type LogClient } from '../../../../../logging';
 import type { FileManageClient } from '../../../../../file-management/index';
 import {
   CxxCascader,
+  CxxLoadingSkeletonBoard,
+  CxxLoadingSkeletonTree,
   themeVariables,
   provideIconSkin,
   type MenuItem,
@@ -44,6 +46,7 @@ const props = withDefaults(
     applicationLinkIds?: readonly string[];
     options: readonly ApplicationSwitcherOption[];
     appName: string;
+    openingApplication?: string;
     sidebarMinWidth?: number;
     sidebarFocused?: boolean;
     accountName?: string;
@@ -269,12 +272,15 @@ defineExpose({
               :options="switchOptions"
             />
           </div>
-          <slot v-if="!view && !settingsPage && !accountState.blocked.value" name="sidebarHeader" />
+          <slot v-if="!view && !settingsPage && !accountState.blocked.value && !openingApplication" name="sidebarHeader" />
         </div>
         <div v-show="view !== 'account'" class="cxx-shell-business-sidebar">
+          <div v-if="openingApplication && !view && !settingsPage" class="cxx-shell-opening-sidebar" aria-busy="true">
+            <CxxLoadingSkeletonTree :rows="8" label="正在加载应用导航" />
+          </div>
           <div
             v-if="!settingsPage"
-            v-show="view !== 'account' && view !== 'task-cart' && !accountState.blocked.value"
+            v-show="view !== 'account' && view !== 'task-cart' && !accountState.blocked.value && !openingApplication"
             :inert="accountState.blocked.value"
             style="display: contents"
           >
@@ -306,14 +312,18 @@ defineExpose({
         :aria-label="view === 'account' ? '个人工作区' : appName"
         data-cxx-drawer-boundary
       >
+        <section v-if="openingApplication && !view && !settingsPage"
+          class="cxx-shell-opening-main" aria-busy="true">
+          <CxxLoadingSkeletonBoard :cards="3" :lines="4" :label="'正在打开' + openingApplication" />
+        </section>
         <div
-          v-show="!view && !settingsPage && !accountState.blocked.value"
+          v-show="!view && !settingsPage && !accountState.blocked.value && !openingApplication"
           class="cxx-shell-main-content"
         >
           <slot name="main" />
         </div>
         <ApplicationAccessPrompt
-          v-if="!view && !settingsPage && accountState.blocked.value"
+          v-if="!view && !settingsPage && accountState.blocked.value && !openingApplication"
           :message="accountState.message.value"
           :has-account="!!account"
           :show-renew="!!account && accountState.recovery.value === 'store'"

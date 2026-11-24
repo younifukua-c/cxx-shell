@@ -88,6 +88,13 @@ try {
     assert.throws(() => modules.resolve(id), { code: 'MODULE_CHANGED' });
   }
 
+  const redirected = path.join(temp, 'deploy-flow'), moved = path.join(temp, 'moved-deploy-flow');
+  fs.renameSync(redirected, moved); fs.symlinkSync(moved, redirected, process.platform === 'win32' ? 'junction' : 'dir');
+  const broken = modules.list().find(item => item.id === 'deploy-flow');
+  assert.equal(broken.root, redirected); assert.equal(broken.unavailable.code, 'MODULE_UNAVAILABLE');
+  assert.throws(() => modules.resolve('deploy-flow'), { code: 'MODULE_IDENTITY_CHANGED' });
+  assert.ok(modules.list().find(item => item.id === 'source-derived' && !item.unavailable));
+
   const manifest = JSON.parse(
     fs.readFileSync(
       path.join(
@@ -108,7 +115,8 @@ try {
 
   const typeFixture=path.join(temp,'consumer.cts');
   fs.writeFileSync(typeFixture,`import {createExternalApplications} from '@cxx/host-runtime/application-loader';
-import type {Environment} from '@cxx/host-runtime';
+import type {Environment, ApplicationHost} from '@cxx/host-runtime';
+declare const host:ApplicationHost; void host.open('example',{activate:false});
 const loader=createExternalApplications({runtime:{environment:{} as Environment},electron:{}});
 loader.descriptor('example');
 void loader.cleanupProject('example',{},'task',new AbortController().signal,(completed,total)=>{

@@ -13,18 +13,32 @@ const MAX_MODULES=64;
 function createApplicationModules(environment) {
     const storage=createStorage(environment),directory=storage.file('settings','common','host-runtime','modules');
     const key=id=>{if(!/^[a-z][a-z0-9-]{0,63}$/.test(id||''))throw failure('MODULE_DEFINITION_INVALID','应用标识无效');return storage.file('settings','common','host-runtime',path.join('modules',id+'.json'));};
-    const read=id=>{
+    const read=(id,includeBranding=true)=>{
         const value=readJson(key(id),null);if(!value)return null;
         if(value.schemaVersion!==1||value.owner!==environment.owner||value.environmentId!==environment.id||value.module?.id!==id)throw failure('MODULE_REGISTRY_INVALID','应用模块登记无法核对，原资料已保留');
         const record=value.module;
         // 单一兼容入口为旧登记补展示元数据，不改 ID、不写回或搬动资料。
-        return record.productCodeSource ? record : {...record,...applicationBranding(record.root,record.id)};
+        if(!includeBranding||record.productCodeSource)return record;
+        if(canonical(record.root)!==record.root)throw failure('MODULE_IDENTITY_CHANGED','原安装位置已被重定向，请修复安装位置后重试');
+        return {...record,...applicationBranding(record.root,record.id)};
     };
     const list=()=>{
         if(!fs.existsSync(directory))return [];
         const names=fs.readdirSync(directory).filter(name=>/^[a-z][a-z0-9-]{0,63}\.json$/.test(name)).sort();
         if(names.length>MAX_MODULES)throw failure('MODULE_LIMIT','应用模块数量超过上限');
-        return names.map(name=>{const record=read(name.slice(0,-5));const branding=applicationBranding(record.root,record.id);return {...presentApplication({...record,...branding}),external:true,infrastructure:false,demo:false};});
+        return names.map(name=>{
+            const id=name.slice(0,-5);let record;
+            try {
+                record=read(id,false);
+                const branding=applicationBranding(record.root,record.id);
+                return {...presentApplication({...record,...branding}),external:true,infrastructure:false,demo:false};
+            } catch(error) {
+                return {id,name:typeof record?.name==='string'?record.name.slice(0,200):id,
+                    version:typeof record?.version==='string'?record.version:'',root:typeof record?.root==='string'?record.root:'',
+                    entry:'',preload:'',external:true,infrastructure:false,demo:false,
+                    unavailable:{code:'MODULE_UNAVAILABLE',causeCode:/^[A-Z][A-Z0-9_]{0,63}$/.test(error?.code)?error.code:'MODULE_READ_FAILED',message:'软件安装位置或声明无法核对，请修复安装位置后刷新；原资料已保留。'}};
+            }
+        });
     };
     const persist=record=>writeJson(key(record.id),{schemaVersion:1,owner:environment.owner,environmentId:environment.id,module:record});
     const registered=id=>{const record=read(id);if(!record)throw failure('MODULE_NOT_REGISTERED','此应用尚未登记，请从其正式入口启动一次');return record;};
