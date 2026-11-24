@@ -5,6 +5,8 @@ import { CxxLoadingEmpty } from "@cxx/ui";
 import { createApp, type App } from "vue";
 import "@cxx/ui/style.css";
 import addIcon from "@cxx/icons/assets/capability-add.svg";
+import shellIcon from "@cxx/icons/assets/38-workspace.svg";
+import { applicationLinks } from "./application-links";
 import "@cxx/ui/theme.css";
 import "@cxx/ui/native.css";
 const bridge = (window as any).cxxHost;
@@ -46,6 +48,7 @@ const shell = mountDomShell(document.querySelector<HTMLElement>("#app")!, {
     {
       id: "cxx-shell",
       name: "应用中心",
+      icon: shellIcon,
       sidebar,
       main,
       accessApplicationId: null,
@@ -65,13 +68,7 @@ async function refresh() {
   const value = await request("metadata");
   shell.setTheme(value.theme || "dark");
   const apps = value.applications.filter((item: any) => !item.infrastructure);
-  shell.setApplicationLinks(
-    apps.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      accessApplicationId: item.id,
-    })),
-  );
+  shell.setApplicationLinks(applicationLinks(apps, shellIcon));
   emptyApp?.unmount();
   emptyApp = undefined;
   list.replaceChildren();

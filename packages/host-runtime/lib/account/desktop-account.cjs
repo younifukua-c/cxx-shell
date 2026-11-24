@@ -55,7 +55,7 @@ function createDesktopAccount({ electron, environment, configuration, createProv
         const values = listApplications();
         if (!Array.isArray(values) || values.length > 200) throw Object.assign(new Error('软件目录暂不可读取，请从软件管理核对登记'), { code: 'ACCOUNT_DIRECTORY_UNAVAILABLE' });
         registered = new Map(values.map(value => [value.id, value.external
-            ? { ...value, infrastructure: false, demo: false, productCode: value.id }
+            ? { ...value, infrastructure: false, demo: false }
             : { ...value }]));
     }
 

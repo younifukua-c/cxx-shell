@@ -9,6 +9,7 @@ const root = path.resolve(import.meta.dirname, "..");
 const runner = process.env.npm_execpath;
 if (!runner?.includes("pnpm")) throw Error("请使用pnpm test:consumer");
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), "cxx-shell-consumer-"));
+const archiveDirectory = path.resolve(process.env.CXX_SHELL_CONSUMER_PACKAGES || path.join(root, "artifacts"));
 const artifacts = {};
 for (const [name, folder] of [
   ["app-shell", "packages/app-shell"],
@@ -20,7 +21,7 @@ for (const [name, folder] of [
   artifacts["@cxx/" + name] =
     "file:" +
     path
-      .join(root, "artifacts", "cxx-" + name + "-" + pkg.version + ".tgz")
+      .join(archiveDirectory, "cxx-" + name + "-" + pkg.version + ".tgz")
       .split(path.sep)
       .join("/");
 }

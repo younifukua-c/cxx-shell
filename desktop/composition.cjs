@@ -11,6 +11,7 @@ const {
 const C = require("@cxx/host-runtime/host-channels");
 const { createCatalog, SHELL_ID } = require("./catalog.cjs");
 const { registerController } = require("./controller.cjs");
+const { windowBranding } = require("./window-branding.cjs");
 /** 独立主框架组装原生窗口、账户和外部应用，不加载任何Git或SQL实现。 */
 async function createDesktopComposition({
   electron,
@@ -34,8 +35,8 @@ async function createDesktopComposition({
   };
   const views = createElectronViewHost({
     electron,
-    windowOptions: () => ({
-      title: require("../package.json").productName,
+    windowOptions: (id) => ({
+      ...windowBranding(id, catalog.list()),
       width: 1480,
       height: 980,
       minWidth: 800,

@@ -3,6 +3,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {createHash}=require('node:crypto');
 const {canonical,inside,failure}=require('./files.cjs');
+const {applicationBranding}=require('./application-branding.cjs');
 
 /** 文件摘要用于拒绝登记后被改写的本地入口；远程发布仍必须核验发布者签名。 */
 function fingerprint(file) {return createHash('sha256').update(fs.readFileSync(file)).digest('hex');}
@@ -16,7 +17,7 @@ function validateApplicationModule(record) {
     for(const file of [entry,preload])if(!['.cjs','.js'].includes(path.extname(file))||!fs.statSync(file).isFile())throw failure('MODULE_ENTRY_INVALID','应用入口或预加载文件不可用，请先完成该软件的安装或构建');
     const runtimePackages=record.runtimePackages===undefined?undefined:path.relative(root,inside(root,path.resolve(root,record.runtimePackages)));
     if(runtimePackages){const stat=fs.statSync(path.join(root,runtimePackages));if(!stat.isFile()||stat.size>1024*1024)throw failure('MODULE_RUNTIME_INVALID','应用运行环境分发清单尚未构建或超出大小限制');}
-    return {id:record.id,name:record.name,version:record.version,root,entry:path.relative(root,entry),preload:path.relative(root,preload),...(runtimePackages?{runtimePackages}:{})};
+    return {...applicationBranding(root,record.id),id:record.id,name:record.name,version:record.version,root,entry:path.relative(root,entry),preload:path.relative(root,preload),...(runtimePackages?{runtimePackages}:{})};
 }
 
 /** 一次核对同时绑定入口、预加载与运行环境声明。 */

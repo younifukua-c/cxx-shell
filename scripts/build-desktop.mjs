@@ -26,4 +26,5 @@ fs.copyFileSync(
   path.join(root, "desktop/renderer/index.html"),
   path.join(out, "index.html"),
 );
+await (await import("./build-branding.mjs")).buildBranding(out);
 console.log("独立桌面框架已构建。");
