@@ -2,7 +2,7 @@ packages:
   - packages/*
   - apps/*
 overrides:
-  "@cxx/ui": "file:vendor/cxx/cxx-ui-1.44.2.tgz"
+  "@cxx/ui": "file:vendor/cxx/cxx-ui-1.44.3.tgz"
   "@cxx/icons": "file:vendor/cxx/cxx-icons-0.7.0.tgz"
 onlyBuiltDependencies:
   - esbuild
