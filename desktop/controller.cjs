@@ -1,5 +1,6 @@
 "use strict";
 const C = require("@cxx/host-runtime/host-channels");
+const { createApplicationOpening } = require("./application-opening.cjs");
 const { failure } = require("@cxx/host-runtime/files");
 /** 只接受本宿主主框架与已登记视图的白名单请求。 */
 function registerController({
@@ -12,10 +13,15 @@ function registerController({
   ensureApplication,
   notify,
   closeApplication,
+  openApplication = createApplicationOpening({
+    host,
+    views,
+    ensureApplication,
+    fallbackId: catalog.SHELL_ID,
+  }),
 }) {
   const handlers = [],
-    signIns = new Map(),
-    activations = new Map();
+    signIns = new Map();
   const handle = (channel, action) => {
     electron.ipcMain.handle(channel, async (event, input) => {
       if (
@@ -137,22 +143,10 @@ function registerController({
       return { success: true };
     }
     if (input.action === "open") {
-      ensureApplication(id);
       const own = host.list().find((item) => item.applicationId === principal);
-      const activation = {};
-      activations.set(own.windowId, activation);
-      try {
-        await host.open(id, { windowId: own.windowId, activate: false });
-        if (activations.get(own.windowId) === activation) {
-          await host.focus(id);
-          const target = host.contents(id);
-          if (target && !target.isDestroyed()) target.send(C.APPLICATION_HOST_CHANGED, { kind: "application-activated", applicationId: id });
-        }
-        notify();
-        return { success: true };
-      } finally {
-        if (activations.get(own.windowId) === activation) activations.delete(own.windowId);
-      }
+      await openApplication(id, { windowId: own.windowId });
+      notify();
+      return { success: true };
     }
     if (input.action === "split")
       return { success: true, value: await host.split(principal) };
@@ -209,7 +203,7 @@ function registerController({
   return () => {
     for (const pending of signIns.values()) pending.controller.abort();
     signIns.clear();
-    activations.clear();
+    openApplication.dispose?.();
     for (const channel of handlers) electron.ipcMain.removeHandler(channel);
   };
 }

@@ -75,6 +75,13 @@ for (const packaged of [false, true]) test(
       assert.match(icon, /^-?\d+$/);
       assert.notEqual(icon, '0', '本次原生窗口应持有实际图标');
       await page.keyboard.press('Escape');
+      const { acquireKernel } = require('@cxx/host-runtime/kernel');
+      for (const applicationId of ['source-derived', undefined]) {
+        const forwarded = await acquireKernel(environment, { sourceId: 'cxx-shell:' + require('../../package.json').version, applicationId,
+          open: async () => { throw Error('已有主程序时不应创建测试内核'); } });
+        assert.equal(forwarded.primary, false);
+        assert.deepEqual(await app.evaluate(({ BaseWindow }) => BaseWindow.getAllWindows().map(window => window.getTitle())), ['cxx-repodock']);
+      }
       const opened = await page.evaluate(() => window.cxxHost.request({ action: 'open', applicationId: 'source-derived' }));
       assert.equal(opened.success, true, JSON.stringify(opened));
       assert.ok(codes.includes('cxx-repodock'));

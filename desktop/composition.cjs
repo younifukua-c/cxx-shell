@@ -11,6 +11,7 @@ const {
 const C = require("@cxx/host-runtime/host-channels");
 const { createCatalog, SHELL_ID } = require("./catalog.cjs");
 const { registerController } = require("./controller.cjs");
+const { createApplicationOpening } = require("./application-opening.cjs");
 const { windowBranding } = require("./window-branding.cjs");
 /** 独立主框架组装原生窗口、账户和外部应用，不加载任何Git或SQL实现。 */
 async function createDesktopComposition({
@@ -136,6 +137,12 @@ async function createDesktopComposition({
     unregister(id);
     registered.delete(id);
   };
+  const openApplication = createApplicationOpening({
+    host,
+    views,
+    ensureApplication,
+    fallbackId: SHELL_ID,
+  });
   const stopController = registerController({
     electron,
     host,
@@ -146,6 +153,7 @@ async function createDesktopComposition({
     ensureApplication,
     notify,
     closeApplication,
+    openApplication,
   });
   await account.initialize();
   return {
@@ -154,10 +162,7 @@ async function createDesktopComposition({
     catalog,
     account,
     ensureApplication,
-    async open(id = SHELL_ID) {
-      ensureApplication(id);
-      return host.open(id);
-    },
+    open: openApplication,
     async destroy() {
       if (stopping) return;
       stopping = true;

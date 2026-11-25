@@ -44,7 +44,7 @@ electron.app
     let root = applicationRoot;
     if (!root) {
       root = path.join(data, "fixture");
-      fs.mkdirSync(root);
+      fs.mkdirSync(root, { recursive: true });
       fs.copyFileSync(
         path.resolve(__dirname, "../../desktop/dist/preload.cjs"),
         path.join(root, "preload.cjs"),

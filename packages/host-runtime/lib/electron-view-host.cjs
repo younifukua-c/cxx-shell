@@ -3,7 +3,7 @@ const {failure}=require('./files.cjs');
 
 /** 原生窗口只承载视图；视图由会话持有，移动时不重新加载页面。 */
 function createElectronViewHost({electron,windowOptions,onViewClosed=()=>{},onWindowsChanged=()=>{},onWindowCreated=()=>{},onWindowMoved=()=>{},beforeClose=async()=>true,report=()=>{}}) {
-    const windows=new Map(),owners=new Map(),views=new Set();
+    const windows=new Map(),owners=new Map(),views=new Set(),applicationIds=new WeakMap();
     let disposed=false;
     const get=id=>{
         const record=windows.get(id);
@@ -16,6 +16,17 @@ function createElectronViewHost({electron,windowOptions,onViewClosed=()=>{},onWi
         const bounds=record.window.getContentBounds();
         if(bounds.width<=0||bounds.height<=0) return;
         for(const view of record.views) view.setBounds({x:0,y:0,width:bounds.width,height:bounds.height});
+    };
+    const activateView=(record,view)=>{
+        record.active=view;
+        if(!view)return;
+        view.setVisible(true);
+        const options=windowOptions(applicationIds.get(view));
+        if(typeof options.title==='string')record.window.setTitle?.(options.title);
+        if(options.icon) {
+            try {record.window.setIcon?.(options.icon);}
+            catch(error) {report(error);}
+        }
     };
     const closeEmpty=id=>{
         const record=windows.get(id);
@@ -50,10 +61,10 @@ function createElectronViewHost({electron,windowOptions,onViewClosed=()=>{},onWi
             window.once('closed',()=>{windows.delete(id);onWindowsChanged();});
             onWindowCreated(window);onWindowsChanged();return id;
         },
-        createView({preload,partition,sandbox=false}) {
+        createView({id:applicationId,preload,partition,sandbox=false}) {
             if(disposed) throw failure('HOST_CLOSED','应用宿主已退出');
             const view=new electron.WebContentsView({webPreferences:{preload,partition,contextIsolation:true,nodeIntegration:false,sandbox}});
-            views.add(view);
+            views.add(view);applicationIds.set(view,applicationId);
             view.webContents.setWindowOpenHandler(()=>({action:'deny'}));
             view.webContents.on('will-navigate',event=>event.preventDefault());
             view.webContents.once('destroyed',()=>{
@@ -61,8 +72,7 @@ function createElectronViewHost({electron,windowOptions,onViewClosed=()=>{},onWi
                 const record=windows.get(id);record?.views.delete(view);
                 onViewClosed(view);
                 if(record?.active===view) {
-                    record.active=[...record.views][0]||null;
-                    record.active?.setVisible(true);
+                    activateView(record,[...record.views][0]||null);
                 }
                 if(id!==undefined) closeEmpty(id);
             });
@@ -77,7 +87,7 @@ function createElectronViewHost({electron,windowOptions,onViewClosed=()=>{},onWi
             if(previous) {
                 view.webContents.emit('cxx-account-surface-detached');
                 previous.window.contentView.removeChildView(view);previous.views.delete(view);
-                if(previous.active===view) {previous.active=[...previous.views][0]||null;previous.active?.setVisible(true);}
+                if(previous.active===view)activateView(previous,[...previous.views][0]||null);
             }
             target.window.contentView.addChildView(view);target.views.add(view);owners.set(view,id);
             view.setVisible(false);resize(target);
@@ -90,7 +100,7 @@ function createElectronViewHost({electron,windowOptions,onViewClosed=()=>{},onWi
             const record=get(id);await this.confirm(session,id);
             if(record.active&&record.active!==session.view)record.active.webContents.emit('cxx-account-surface-detached');
             for(const view of record.views) view.setVisible(view===session.view);
-            record.active=session.view;
+            activateView(record,session.view);
             if(record.window.isMinimized()) record.window.restore();
             if(windowOptions(session.applicationId).show!==false) {record.window.show();record.window.focus();}
             resize(record);

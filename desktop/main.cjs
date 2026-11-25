@@ -42,7 +42,7 @@ const ready = app.whenReady().then(async () => {
       applicationId: requested,
       open: async (id) => {
         await ready;
-        await composition.open(id || "cxx-shell");
+        await composition.open(id);
       },
     },
   );
@@ -67,7 +67,7 @@ const ready = app.whenReady().then(async () => {
       : path.dirname(__dirname),
     sourceId: runtime.sourceId,
   });
-  await composition.open(requested || "cxx-shell");
+  await composition.open(requested);
 });
 ready.catch((error) => {
   console.error(error);
