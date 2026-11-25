@@ -121,12 +121,12 @@ test("登记软件目录保留产品消费的安装与启用字段，未开启�
   }
   const menu = () => catalog.list().filter(item => !item.infrastructure && item.installed &&
     (item.configuredEnabled ?? item.enabled)).map(item => item.id);
-  assert.deepEqual(menu(), ["deploy-flow", "source-derived"]);
+  assert.deepEqual(menu(), ["source-derived", "deploy-flow"]);
   catalog.setEnabled("deploy-flow", false);
   assert.deepEqual(menu(), ["source-derived"]);
   const disabled = catalog.list().find(item => item.id === "deploy-flow");
   assert.equal(disabled.installed, true);
   assert.equal(disabled.configuredEnabled, false);
   catalog.setEnabled("deploy-flow", true);
-  assert.deepEqual(menu(), ["deploy-flow", "source-derived"]);
+  assert.deepEqual(menu(), ["source-derived", "deploy-flow"]);
 });

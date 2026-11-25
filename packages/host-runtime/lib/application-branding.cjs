@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('node:fs'), path = require('node:path');
 const { inside, readJson, failure } = require('./files.cjs');
+const { applicationNavigation } = require('./application-navigation.cjs');
 const MAX_METADATA_BYTES = 1024 * 1024;
 const MAX_ICON_BYTES = 512 * 1024;
 
@@ -24,7 +25,8 @@ function applicationBranding(root, id) {
     const iconPath = declared === undefined ? 'build/' + packageName.replace(/^@/, '').replace('/', '-') + '-icon.png' : declared;
     if (typeof iconPath !== 'string') throw failure('MODULE_ICON_INVALID', '应用图标路径无效');
     const icon = inside(root, path.resolve(root, iconPath));
-    return { productCode, productCodeSource: pkg?.cxxApplication?.productCode === undefined ? 'legacy-id' : 'manifest', ...(fs.existsSync(icon) && path.extname(icon).toLowerCase() === '.png'
+    const navigation = applicationNavigation(pkg?.cxxApplication?.navigation, id);
+    return { ...(navigation ? { navigation } : {}), productCode, productCodeSource: pkg?.cxxApplication?.productCode === undefined ? 'legacy-id' : 'manifest', ...(fs.existsSync(icon) && path.extname(icon).toLowerCase() === '.png'
         ? { iconPath: path.relative(root, icon) } : {}) };
 }
 

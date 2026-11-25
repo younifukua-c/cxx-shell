@@ -74,6 +74,7 @@ function registerController({
         success: true,
         value: {
           applicationId: principal,
+          navigation: openApplication.navigationOf?.(principal),
           applications: catalog.list(),
           sessions: host.list(),
           windowId: views.windowOf(contents)?.id,
@@ -144,7 +145,21 @@ function registerController({
     }
     if (input.action === "open") {
       const own = host.list().find((item) => item.applicationId === principal);
-      await openApplication(id, { windowId: own.windowId });
+      const entryId = input.entryId;
+      if (entryId !== undefined) {
+        const application = catalog
+          .list()
+          .find((item) => item.id === id && !item.infrastructure);
+        const entries =
+          application?.navigation ||
+          (application ? [{ id: application.id }] : []);
+        if (!entries.some((item) => item.id === entryId))
+          throw failure(
+            "APPLICATION_MENU_INVALID",
+            "应用菜单已更新，请重新打开菜单",
+          );
+      }
+      await openApplication(id, { windowId: own.windowId, entryId });
       notify();
       return { success: true };
     }

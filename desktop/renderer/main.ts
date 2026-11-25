@@ -57,8 +57,8 @@ const shell = mountDomShell(document.querySelector<HTMLElement>("#app")!, {
   account: createAccountClient(bridge.account),
   windowHost: bridge.window,
   theme: "dark",
-  onApplicationLink: (id) =>
-    request("open", { applicationId: id }).catch(report),
+  onApplicationLink: (id, entryId) =>
+    request("open", { applicationId: id, ...(entryId ? { entryId } : {}) }).catch(report),
   onThemeChange: (theme) => {
     void request("shell-theme", { theme }).catch(report);
   },
@@ -68,7 +68,7 @@ async function refresh() {
   const value = await request("metadata");
   shell.setTheme(value.theme || "dark");
   const apps = value.applications.filter((item: any) => !item.infrastructure);
-  shell.setApplicationLinks(applicationLinks(apps, shellIcon));
+  shell.setApplicationMenu(apps.filter((item: any) => item.installed && (item.configuredEnabled ?? item.enabled)));
   emptyApp?.unmount();
   emptyApp = undefined;
   list.replaceChildren();

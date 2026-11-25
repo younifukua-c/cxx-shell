@@ -44,6 +44,7 @@ const props = withDefaults(
   defineProps<{
     current: string;
     applicationLinkIds?: readonly string[];
+    applicationCatalog?: boolean;
     options: readonly ApplicationSwitcherOption[];
     appName: string;
     openingApplication?: string;
@@ -133,7 +134,7 @@ const switchOptions = computed(() => [
       trailingLabel: status.allowed ? undefined : `需要解锁。${status.message}`,
     };
   })),
-  ...shellUtilityOptions(logIcon, settingsIcon, props.taskCart),
+  ...shellUtilityOptions(logIcon, settingsIcon, props.taskCart, props.applicationCatalog),
 ]);
 /** 登录账户提供个人入口，设置仍由统一视图承载。 */
 const accountItems = computed(() =>
@@ -266,6 +267,7 @@ defineExpose({
               @update:model-value="retainNavigationSelection"
               @select="selectApp"
               label="切换应用"
+              placeholder="选择应用"
               max-list-height="available"
               :compact="compact"
               :badge="taskCart?.failures"

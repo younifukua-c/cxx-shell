@@ -10,6 +10,8 @@ function createApplicationOpening({
   fallbackId,
 }) {
   const activations = new Map();
+  const navigation = new Map();
+  let navigationRevision = 0;
   let initialOpening,
     disposed = false;
   async function activate(requested, options) {
@@ -29,6 +31,11 @@ function createApplicationOpening({
       );
     const id = requested || current?.applicationId || fallbackId;
     ensureApplication(id);
+    const previousNavigation = navigation.get(id);
+    const requestedNavigation = options.entryId
+      ? { entryId: options.entryId, revision: ++navigationRevision }
+      : undefined;
+    if (requestedNavigation) navigation.set(id, requestedNavigation);
     const existing = sessions.find((session) => session.applicationId === id);
     const windowId = existing?.windowId ?? target;
     const key = windowId ?? "initial";
@@ -43,9 +50,16 @@ function createApplicationOpening({
           contents.send(C.APPLICATION_HOST_CHANGED, {
             kind: "application-activated",
             applicationId: id,
+            ...(navigation.get(id) || {}),
           });
       }
       return session;
+    } catch (error) {
+      if (requestedNavigation && navigation.get(id) === requestedNavigation) {
+        if (previousNavigation) navigation.set(id, previousNavigation);
+        else navigation.delete(id);
+      }
+      throw error;
     } finally {
       if (activations.get(key) === activation) activations.delete(key);
     }
@@ -67,7 +81,9 @@ function createApplicationOpening({
       if (initialOpening === task) initialOpening = undefined;
     }
   };
+  open.navigationOf = (id) => navigation.get(id);
   open.dispose = () => {
+    navigation.clear();
     disposed = true;
     activations.clear();
     initialOpening = undefined;

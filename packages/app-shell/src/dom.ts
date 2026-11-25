@@ -1,4 +1,4 @@
-import { createApp, h, ref, watch, nextTick } from 'vue';
+import { createApp, h, ref, watch, nextTick, computed } from 'vue';
 import { uiStyles } from '@cxx/ui/styles';
 import { createViewScope, installIconStates } from '@cxx/ui/dom';
 import type { ThemeName } from '@cxx/ui';
@@ -16,6 +16,9 @@ import type { LogScope } from './components/application-framework/log/center/Cxx
 import type { ShellAction, ShellView, WindowHost } from './types';
 import { isReservedApplicationId, validateApplicationMenuGroup, type ApplicationMenuGroup } from './application-entry';
 import type { PersonalAccountClient, PersonalWorkspaceTarget } from './account';
+import { projectApplicationMenu, type ApplicationMenuEntry } from './application-menu';
+import { applicationMenuIcon } from './application-menu-icons';
+export type { ApplicationMenuEntry } from './application-menu';
 import { mountDomSlots } from './dom-slots';
 
 /** 已有 DOM 应用：业务节点保留在文档树，外壳在 Shadow DOM 内隔离。 */
@@ -46,7 +49,7 @@ export interface DomSettingsSection extends Omit<SettingsItem, 'group'> {
 export type DomApplicationLink = Pick<DomApplication, "id" | "name" | "icon" | "accessApplicationId" | "menuGroup">;
 export interface DomShellOptions {
   applicationLinks?: readonly DomApplicationLink[];
-  onApplicationLink?: (id: string) => void | Promise<void>;
+  onApplicationLink?: (id: string, entryId?: string) => void | Promise<void>;
   apps: readonly DomApplication[];
   initialApp?: string;
   accountName?: string;
@@ -121,27 +124,68 @@ export function mountDomShell(host: HTMLElement, options: DomShellOptions) {
     ids.has(options.initialApp || '') ? options.initialApp! : options.apps[0]!.id,
   );
   const links = ref<DomApplicationLink[]>([]);
+  const applicationMenu = ref<readonly ApplicationMenuEntry[]>();
+  const menuOwner = options.apps[0]!.menuGroup?.id || options.apps[0]!.id;
+  const publicMenuEntries = new Set(
+    options.apps
+      .filter((item) => item.accessApplicationId === null)
+      .map((item) => item.id),
+  );
+  const menuProjection = computed(
+    () =>
+      applicationMenu.value &&
+      projectApplicationMenu(
+        applicationMenu.value,
+        menuOwner,
+        applicationMenuIcon,
+        publicMenuEntries,
+      ),
+  );
+  /** 宿主整批发布安装目录，当前应用不能重排或替换一级入口。 */
+  function setApplicationMenu(value: readonly ApplicationMenuEntry[]) {
+    if (destroyed) throw Error("外壳已销毁");
+    projectApplicationMenu(value, menuOwner);
+    applicationMenu.value = value;
+  }
   const openingApplication = ref<string>();
   const openingTasks = new Map<string, Promise<void>>();
   let openingRevision = 0;
   /** 同一软件复用在途加载，画面只跟随最近一次选择，失败恢复原节点。 */
-  function openApplicationLink(id: string) {
+  function openApplicationLink(id: string, entryId?: string) {
+    const taskKey = id + ":" + (entryId || "");
     const revision = ++openingRevision;
-    openingApplication.value = [...options.apps, ...links.value].find(item => item.id === id)?.name;
+    openingApplication.value = [
+      ...options.apps,
+      ...links.value,
+      ...(applicationMenu.value || []),
+    ].find((item) => item.id === id)?.name;
     chrome.value?.showApplication();
-    let task = openingTasks.get(id);
+    let task = openingTasks.get(taskKey);
     if (!task) {
-      task = nextTick().then(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())))
-        .then(() => { if (!destroyed) return options.onApplicationLink?.(id); });
-      openingTasks.set(id, task);
-      const release = () => { if (openingTasks.get(id) === task) openingTasks.delete(id); };
+      task = nextTick()
+        .then(
+          () =>
+            new Promise<void>((resolve) =>
+              requestAnimationFrame(() => resolve()),
+            ),
+        )
+        .then(() => {
+          if (!destroyed) return options.onApplicationLink?.(id, entryId);
+        });
+      openingTasks.set(taskKey, task);
+      const release = () => {
+        if (openingTasks.get(taskKey) === task) openingTasks.delete(taskKey);
+      };
       void task.then(release, release);
     }
-    return task.catch(error => {
-      if (!destroyed && revision === openingRevision) options.onError(error);
-    }).finally(() => {
-      if (!destroyed && revision === openingRevision) openingApplication.value = undefined;
-    });
+    return task
+      .catch((error) => {
+        if (!destroyed && revision === openingRevision) options.onError(error);
+      })
+      .finally(() => {
+        if (!destroyed && revision === openingRevision)
+          openingApplication.value = undefined;
+      });
   }
   /** 整批校验通过才发布入口；失败保留上一份列表。 */
   function setApplicationLinks(value: readonly DomApplicationLink[]) {
@@ -208,13 +252,19 @@ export function mountDomShell(host: HTMLElement, options: DomShellOptions) {
   }
   /** 显式宿主激活恢复业务；同 id 不重复通知应用切换，也不重建节点。 */
   function selectApp(id: string) {
+    const route = menuProjection.value?.routes.get(id);
+    if (route) {
+      if (chrome.value && !chrome.value.requestApplication(id)) return;
+      return openApplicationLink(route.applicationId, route.entryId);
+    }
     if (destroyed) throw new Error("外壳已销毁");
-    const linked = links.value.some(item => item.id === id);
+    const linked = links.value.some((item) => item.id === id);
     if (!linked && !ids.has(id)) throw new Error(`未注册的应用：${id}`);
     // 宿主已激活当前软件时先撤下账户页面；资格未就绪仍由业务区遮罩保护。
     if (!linked && id === current.value) {
       chrome.value?.showApplication();
-      if (openingApplication.value) return openApplicationLink(options.initialApp || options.apps[0]!.id);
+      if (openingApplication.value)
+        return openApplicationLink(options.initialApp || options.apps[0]!.id);
       return;
     }
     if (chrome.value && !chrome.value.requestApplication(id)) return;
@@ -256,12 +306,13 @@ export function mountDomShell(host: HTMLElement, options: DomShellOptions) {
           current: current.value,
           appName: app.name,
           openingApplication: openingApplication.value,
-          applicationLinkIds: links.value.map(item => item.id),
+          applicationLinkIds: menuProjection.value ? [...menuProjection.value.routes.keys()] : links.value.map(item => item.id),
+          applicationCatalog: !!applicationMenu.value,
           onApplicationLink: selectApp,
           sidebarMinWidth: app.sidebarMinWidth,
           sidebarFocused: sidebarFocused.value,
           theme: theme.value,
-          options: [...options.apps, ...links.value].map((item) => ({
+          options: menuProjection.value?.options || [...options.apps, ...links.value].map((item) => ({
             value: item.id,
             label: item.name,
             icon: item.icon,
@@ -362,6 +413,14 @@ export function mountDomShell(host: HTMLElement, options: DomShellOptions) {
   return {
     selectApp,
     setApplicationLinks,
+    setApplicationMenu,
+    /** 恢复宿主确认的本地导航；资格遮罩保持独立生效，不触发选择时的商城跳转。 */
+    restoreApplicationView(id: string) {
+      if (!ids.has(id)) throw Error('宿主指定的应用功能不存在');
+      chrome.value?.showApplication();
+      current.value = id;
+    },
+
     /** 同一页面更换业务对象时清理临时界面，不重建主页面。 */
     resetInteractions() { shellScope.reset(); },
     logging,

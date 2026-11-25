@@ -34,10 +34,30 @@ function createCatalog(environment) {
   const status = (id) => state.applications[id];
   const enabled = (id) =>
     status(id)?.enabled !== false && status(id)?.installed !== false;
-  const list = () => [
-    { id: SHELL_ID, name: "应用中心", infrastructure: true, enabled: true },
-    ...modules.list().map((item) => ({ ...item, installed: status(item.id)?.installed !== false, configuredEnabled: !item.unavailable && status(item.id)?.enabled !== false, enabled: !item.unavailable && enabled(item.id) })),
-  ];
+  const list = () => {
+    const entries = modules.list();
+    const known = entries.map((item) => item.id);
+    const previous = state.applicationOrder || Object.keys(state.applications);
+    const order = [
+      ...previous.filter((id) => known.includes(id)),
+      ...known.filter((id) => !previous.includes(id)),
+    ];
+    if (JSON.stringify(state.applicationOrder) !== JSON.stringify(order))
+      save({ ...state, applicationOrder: order });
+    const byId = new Map(entries.map((item) => [item.id, item]));
+    return [
+      { id: SHELL_ID, name: "应用中心", infrastructure: true, enabled: true },
+      ...order.map((id) => {
+        const item = byId.get(id);
+        return {
+          ...item,
+          installed: status(id)?.installed !== false,
+          configuredEnabled: !item.unavailable && status(id)?.enabled !== false,
+          enabled: !item.unavailable && enabled(id),
+        };
+      }),
+    ];
+  };
   const save = (next) => {
     writeJson(file, next);
     state = next;
@@ -93,7 +113,9 @@ function createCatalog(environment) {
     },
     canOpen: (id) =>
       id === SHELL_ID ||
-      modules.list().some((item) => item.id === id && !item.unavailable && enabled(id)),
+      modules
+        .list()
+        .some((item) => item.id === id && !item.unavailable && enabled(id)),
     installation: () => ({
       directory:
         state.installationRoot || path.join(environment.root, "installation"),

@@ -62,7 +62,7 @@ for (const packaged of [false, true]) test(
       assert.notEqual(apps[0].icon, apps[1].icon);
       await page.getByRole('button', { name: '切换应用', exact: true }).click();
       for (const name of ['cxx-repodock', 'cxx-deploy-flow', 'other-product', 'missing-product']) {
-        const menuItem = page.getByRole('option', { name, exact: true });
+        const menuItem = page.getByRole('menuitem', { name, exact: true });
         await expect(menuItem).toBeVisible();
         const image = menuItem.locator('img').first();
         await expect(image).toBeVisible();
