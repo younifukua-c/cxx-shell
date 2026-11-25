@@ -69,6 +69,8 @@ for (const packaged of [false, true]) test(
         assert.equal(await image.evaluate(img => img.complete && img.naturalWidth > 0), true);
       }
       const evidence = path.resolve('.local/shell-entry-evidence'); fs.mkdirSync(evidence, { recursive: true });
+      // 隐藏原生窗口不产生截图帧；后台仍核对菜单、DOM 与原生窗口。
+      if (process.env.PLAYWRIGHT_TEST !== "1")
       await page.screenshot({ path: path.join(evidence, 'menu-' + packaged + '.png') });
       const handle = await app.evaluate(({ BaseWindow }) => BaseWindow.getAllWindows()[0].getNativeWindowHandle().readBigUInt64LE().toString());
       const icon = require('../helpers/window-icon.cjs').nativeWindowIcon(handle);
@@ -80,6 +82,15 @@ for (const packaged of [false, true]) test(
         const forwarded = await acquireKernel(environment, { sourceId: 'cxx-shell:' + require('../../package.json').version, applicationId,
           open: async () => { throw Error('已有主程序时不应创建测试内核'); } });
         assert.equal(forwarded.primary, false);
+        assert.deepEqual(await app.evaluate(({ BaseWindow }) => BaseWindow.getAllWindows().map(window => window.getTitle())), ['cxx-repodock']);
+      }
+      const executable = await app.evaluate(() => process.execPath);
+      const launchAgain = require('node:util').promisify(require('node:child_process').execFile);
+      for (const applicationId of ['source-derived', undefined]) {
+        await launchAgain(executable, [
+          ...(packaged ? [] : [path.resolve('.')]), '--test-root=' + data, '--disable-gpu',
+          ...(applicationId ? ['--application=' + applicationId] : []),
+        ], { env: { ...env, PLAYWRIGHT_TEST: '1' }, windowsHide: true, timeout: 20000 });
         assert.deepEqual(await app.evaluate(({ BaseWindow }) => BaseWindow.getAllWindows().map(window => window.getTitle())), ['cxx-repodock']);
       }
       const opened = await page.evaluate(() => window.cxxHost.request({ action: 'open', applicationId: 'source-derived' }));

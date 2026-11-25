@@ -46,6 +46,8 @@ test(
       await expect(
         page.getByRole("button", { name: "加入软件", exact: true }),
       ).toBeVisible();
+      // 隐藏原生窗口不产生截图帧；后台仍核对菜单、DOM 与原生窗口。
+      if (process.env.PLAYWRIGHT_TEST !== "1")
       await page.screenshot({
         path: path.join(
           path.resolve(__dirname, "../../.local"),
