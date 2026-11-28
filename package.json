@@ -28,7 +28,7 @@
   "devDependencies": {
     "@cxx/app-shell": "workspace:*",
     "@cxx/icons": "file:vendor/cxx/cxx-icons-0.7.0.tgz",
-    "@cxx/ui": "file:vendor/cxx/cxx-ui-1.44.3.tgz",
+    "@cxx/ui": "file:vendor/cxx/cxx-ui-1.44.4.tgz",
     "@playwright/test": "1.63.0",
     "@types/node": "^24.0.0",
     "@vitejs/plugin-vue": "^6.0.0",
