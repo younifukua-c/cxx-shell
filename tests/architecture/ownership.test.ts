@@ -37,3 +37,10 @@ test("外壳滚动条沿用公共UI外观",()=>{
   assert.doesNotMatch(source,/::-webkit-scrollbar|scrollbar-color|scrollbar-width/,entry.name);
  }
 });
+
+test('原生外壳按契约、样式和切换生命周期拆分，每个模块不超过400行',()=>{
+  for(const name of ['dom.ts','dom-types.ts','dom-root.ts','dom-application-opening.ts']) {
+    const source=fs.readFileSync(path.join('packages/app-shell/src',name),'utf8');
+    assert.ok(source.trimEnd().split(/\r?\n/).length<=400,name+' 超过400行');
+  }
+});

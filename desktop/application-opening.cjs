@@ -11,6 +11,7 @@ function createApplicationOpening({
 }) {
   const activations = new Map();
   const navigation = new Map();
+  const pendingNavigation = new Map();
   let navigationRevision = 0;
   let initialOpening,
     disposed = false;
@@ -31,11 +32,10 @@ function createApplicationOpening({
       );
     const id = requested || current?.applicationId || fallbackId;
     ensureApplication(id);
-    const previousNavigation = navigation.get(id);
     const requestedNavigation = options.entryId
       ? { entryId: options.entryId, revision: ++navigationRevision }
       : undefined;
-    if (requestedNavigation) navigation.set(id, requestedNavigation);
+    if (requestedNavigation) pendingNavigation.set(id, requestedNavigation);
     const existing = sessions.find((session) => session.applicationId === id);
     const windowId = existing?.windowId ?? target;
     const key = windowId ?? "initial";
@@ -43,24 +43,21 @@ function createApplicationOpening({
     activations.set(key, activation);
     try {
       const session = await host.open(id, { windowId, activate: false });
-      if (activations.get(key) === activation) {
+      if (!disposed && activations.get(key) === activation) {
         await host.focus(id);
-        const contents = host.contents(id);
+        const contents = !disposed && activations.get(key) === activation && host.contents(id);
         if (contents && !contents.isDestroyed())
           contents.send(C.APPLICATION_HOST_CHANGED, {
             kind: "application-activated",
             applicationId: id,
-            ...(navigation.get(id) || {}),
+            ...(requestedNavigation || navigation.get(id) || {}),
           });
       }
+      if (!disposed && requestedNavigation && requestedNavigation.revision > (navigation.get(id)?.revision || 0))
+        navigation.set(id, requestedNavigation);
       return session;
-    } catch (error) {
-      if (requestedNavigation && navigation.get(id) === requestedNavigation) {
-        if (previousNavigation) navigation.set(id, previousNavigation);
-        else navigation.delete(id);
-      }
-      throw error;
     } finally {
+      if (pendingNavigation.get(id) === requestedNavigation) pendingNavigation.delete(id);
       if (activations.get(key) === activation) activations.delete(key);
     }
   }
@@ -81,9 +78,10 @@ function createApplicationOpening({
       if (initialOpening === task) initialOpening = undefined;
     }
   };
-  open.navigationOf = (id) => navigation.get(id);
+  open.navigationOf = (id) => pendingNavigation.get(id) || navigation.get(id);
   open.dispose = () => {
     navigation.clear();
+    pendingNavigation.clear();
     disposed = true;
     activations.clear();
     initialOpening = undefined;

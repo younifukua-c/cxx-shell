@@ -27,6 +27,7 @@ function createElectronViewHost({electron,windowOptions,onViewClosed=()=>{},onWi
             try {record.window.setIcon?.(options.icon);}
             catch(error) {report(error);}
         }
+        return options;
     };
     const closeEmpty=id=>{
         const record=windows.get(id);
@@ -100,9 +101,9 @@ function createElectronViewHost({electron,windowOptions,onViewClosed=()=>{},onWi
             const record=get(id);await this.confirm(session,id);
             if(record.active&&record.active!==session.view)record.active.webContents.emit('cxx-account-surface-detached');
             for(const view of record.views) view.setVisible(view===session.view);
-            activateView(record,session.view);
+            const options=activateView(record,session.view);
             if(record.window.isMinimized()) record.window.restore();
-            if(windowOptions(session.applicationId).show!==false) {record.window.show();record.window.focus();}
+            if(options.show!==false) {record.window.show();record.window.focus();}
             resize(record);
             session.view.webContents.focus();
         },

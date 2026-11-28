@@ -1,78 +1,21 @@
-import { createApp, h, ref, watch, nextTick, computed } from 'vue';
-import { uiStyles } from '@cxx/ui/styles';
+import {mountRoot} from './dom-root';
+import { createApp, h, ref, watch, computed } from 'vue';
 import { createViewScope, installIconStates } from '@cxx/ui/dom';
 import type { ThemeName } from '@cxx/ui';
 import ShellChrome from './components/application-framework/shell/app/internal/ShellChrome.vue';
-import shell from './style.css?inline';
-import titlebar from './titlebar.css?inline';
-import logStyles from './logs.css?inline';
-import settingsStyles from './settings.css?inline';
-import accountStyles from './account.css?inline';
-import fileManageStyles from './file-management.css?inline';
-import type { SettingsItem } from './settings';
-import { createMemoryLogClient, type LogClient, type LogType } from './logging';
-import type { FileManageClient } from './file-management/index';
+import { createMemoryLogClient } from './logging';
 import type { LogScope } from './components/application-framework/log/center/CxxLogCenter.vue';
-import type { ShellAction, ShellView, WindowHost } from './types';
+import type { ShellView } from './types';
 import { isReservedApplicationId, validateApplicationMenuGroup, type ApplicationMenuGroup } from './application-entry';
-import type { PersonalAccountClient, PersonalWorkspaceTarget } from './account';
+import type { PersonalWorkspaceTarget } from './account';
 import { projectApplicationMenu, type ApplicationMenuEntry } from './application-menu';
 import { applicationMenuIcon } from './application-menu-icons';
 export type { ApplicationMenuEntry } from './application-menu';
 import { mountDomSlots } from './dom-slots';
 
-/** 已有 DOM 应用：业务节点保留在文档树，外壳在 Shadow DOM 内隔离。 */
-export interface DomApplication {
-  id: string;
-  name: string;
-  icon?: string;
-  /** 默认使用 id；string 映射宿主软件资格与商城，null 显式声明公共页面。 */
-  accessApplicationId?: string | null;
-  /** 同组有多个入口时，由外壳显示为级联菜单。 */
-  menuGroup?: ApplicationMenuGroup;
-  sidebar: HTMLElement;
-  /** 当前应用可选的固定侧栏顶部内容，位于应用选择器下方。 */
-  sidebarHeader?: HTMLElement;
-  /** 侧栏可拖至的最小宽度；图标导航可传 72，普通内容默认 180。 */
-  sidebarMinWidth?: number;
-  main: HTMLElement;
-  accountActions?: readonly ShellAction[];
-  logTypes?: readonly LogType[];
-  settings?: readonly DomSettingsSection[];
-}
-/** 原生表单投影到设置页，节点留在文档树；onOpen 每次进入该页读取宿主数据。 */
-export interface DomSettingsSection extends Omit<SettingsItem, 'group'> {
-  content: HTMLElement;
-  onOpen?: () => void | Promise<void>;
-}
-/** 其他原生页面的应用入口；选择后交给宿主，不创建或替换当前业务节点。 */
-export type DomApplicationLink = Pick<DomApplication, "id" | "name" | "icon" | "accessApplicationId" | "menuGroup">;
-export interface DomShellOptions {
-  applicationLinks?: readonly DomApplicationLink[];
-  onApplicationLink?: (id: string, entryId?: string) => void | Promise<void>;
-  apps: readonly DomApplication[];
-  initialApp?: string;
-  accountName?: string;
-  /** 可选的个人中心宿主端口；不提供时维持原有帮助菜单。 */
-  account?: PersonalAccountClient;
-  commonActions?: readonly ShellAction[];
-  windowHost?: WindowHost;
-  theme?: ThemeName;
-  onAppChange?: (id: string) => void;
-  /** 应用、设置页或日志页真正变化时通知宿主，重复选择不触发。 */
-  onViewChange?: (view: ShellView) => void;
-  onError: (error: unknown) => void;
-  logging?: LogClient;
-  /** 公共任务车。提供 content 时在独立页面展示，onOpen 用于读取任务。 */
-  taskCart?: { icon?: string; content?: HTMLElement; sidebar?: HTMLElement; onOpen?(): void | Promise<void> };
-  /** 文件管理能力的宿主实现；传了才在设置页出现「文件夹与打开方式」。 */
-  fileManagement?: FileManageClient;
-  onLogViewChange?: (open: boolean) => void;
-  onClearLogScope?: () => void;
-  settingsSections?: readonly DomSettingsSection[];
-  onThemeChange?: (theme: ThemeName) => void;
-  onHelp?: () => void | Promise<void>;
-}
+import type {DomApplication, DomApplicationLink, DomShellOptions} from './dom-types';
+export type {DomApplication, DomApplicationLink, DomShellOptions, DomSettingsSection} from './dom-types';
+import {createDomApplicationOpening} from './dom-application-opening';
 
 /** 应用区域共同参与节点所有权校验、挂载和交互清理。 */
 function applicationNodes(app: DomApplication): HTMLElement[] {
@@ -147,46 +90,14 @@ export function mountDomShell(host: HTMLElement, options: DomShellOptions) {
     projectApplicationMenu(value, menuOwner);
     applicationMenu.value = value;
   }
-  const openingApplication = ref<string>();
-  const openingTasks = new Map<string, Promise<void>>();
-  let openingRevision = 0;
-  /** 同一软件复用在途加载，画面只跟随最近一次选择，失败恢复原节点。 */
-  function openApplicationLink(id: string, entryId?: string) {
-    const taskKey = id + ":" + (entryId || "");
-    const revision = ++openingRevision;
-    openingApplication.value = [
-      ...options.apps,
-      ...links.value,
-      ...(applicationMenu.value || []),
-    ].find((item) => item.id === id)?.name;
-    chrome.value?.showApplication();
-    let task = openingTasks.get(taskKey);
-    if (!task) {
-      task = nextTick()
-        .then(
-          () =>
-            new Promise<void>((resolve) =>
-              requestAnimationFrame(() => resolve()),
-            ),
-        )
-        .then(() => {
-          if (!destroyed) return options.onApplicationLink?.(id, entryId);
-        });
-      openingTasks.set(taskKey, task);
-      const release = () => {
-        if (openingTasks.get(taskKey) === task) openingTasks.delete(taskKey);
-      };
-      void task.then(release, release);
-    }
-    return task
-      .catch((error) => {
-        if (!destroyed && revision === openingRevision) options.onError(error);
-      })
-      .finally(() => {
-        if (!destroyed && revision === openingRevision)
-          openingApplication.value = undefined;
-      });
-  }
+  const opening = createDomApplicationOpening({
+    nameOf: id => [...options.apps, ...links.value, ...(applicationMenu.value || [])].find(item => item.id === id)?.name,
+    showApplication: () => chrome.value?.showApplication(),
+    onOpen: (id, entryId) => options.onApplicationLink?.(id, entryId),
+    onError: options.onError,
+  });
+  const openingApplication = opening.name;
+  const openApplicationLink = opening.open;
   /** 整批校验通过才发布入口；失败保留上一份列表。 */
   function setApplicationLinks(value: readonly DomApplicationLink[]) {
     if (destroyed) throw new Error("外壳已销毁");
@@ -395,8 +306,7 @@ export function mountDomShell(host: HTMLElement, options: DomShellOptions) {
   function destroy() {
     if (destroyed) return;
     destroyed = true;
-    openingRevision++;
-    openingTasks.clear();
+    opening.destroy();
     shellScope.destroy();
     for (const scope of [...appScopes.values(), ...settingScopes.values()]) scope.destroy();
     releaseAppearance();
@@ -469,17 +379,6 @@ export {
   createFileManagerButton,
 } from './file-management/index';
 export type { FileManageActions, FileManageButtonOptions } from './file-management/index';
-
-/** 外壳样式只进入自己的 ShadowRoot，业务样式无法覆盖窗口与账户控件。 */
-function mountRoot(host: HTMLElement) {
-  const shadow = host.shadowRoot || host.attachShadow({ mode: 'open' });
-  const style = document.createElement('style');
-  style.textContent =
-    uiStyles + '\n' + titlebar + '\n' + shell + '\n' + logStyles + '\n' + settingsStyles + '\n' + accountStyles + '\n' + fileManageStyles;
-  const root = document.createElement('div');
-  shadow.replaceChildren(style, root);
-  return root;
-}
 
 /** @deprecated 使用 createFileManagerButton。 */
 export { createFileManagerButton as createFileManageButton } from './file-management/index';

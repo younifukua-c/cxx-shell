@@ -131,3 +131,42 @@ test("首个窗口已建立但尚未加载时，后续启动请求仍按顺序�
   assert.equal(f.views.windows().length, 1);
   assert.equal(f.views.windows()[0].active, "deploy-flow");
 });
+
+function navigationFixture() {
+  const pending = [], notifications = [];
+  const host = { list: () => [], open: () => new Promise((resolve, reject) => pending.push({resolve, reject})),
+    focus: async () => {}, contents: () => ({isDestroyed: () => false, send: (_channel, value) => notifications.push(value)}) };
+  const open = createApplicationOpening({host, views: {windows: () => [{id: 1, isFocused: () => true}]},
+    ensureApplication() {}, fallbackId: 'cxx-shell'});
+  return {open, pending, notifications};
+}
+for (const scenario of [
+  {name: '先失败旧请求再失败新请求', order: [0,1], success: [], expected: undefined},
+  {name: '先失败新请求再失败旧请求', order: [1,0], success: [], expected: undefined},
+  {name: '旧请求成功新请求失败', order: [0,1], success: [0], expected: 'servers'},
+  {name: '新请求失败旧请求随后成功', order: [1,0], success: [0], expected: 'servers'},
+  {name: '旧请求失败新请求成功', order: [0,1], success: [1], expected: 'clients'},
+  {name: '新请求成功旧请求迟到成功', order: [1,0], success: [0,1], expected: 'clients'},
+]) test('导航并发回滚：' + scenario.name, async () => {
+  const f = navigationFixture();
+  const a = f.open('deploy-flow', {entryId:'servers'}).then(() => true, () => false);
+  const b = f.open('deploy-flow', {entryId:'clients'}).then(() => true, () => false);
+  assert.equal(f.open.navigationOf('deploy-flow').entryId, 'clients', '首次加载可读取最新待打开入口');
+  for (const index of scenario.order) {
+    if (scenario.success.includes(index)) f.pending[index].resolve({applicationId:'deploy-flow'});
+    else f.pending[index].reject(Error('打开失败'));
+    await (index === 0 ? a : b);
+  }
+  assert.equal(f.open.navigationOf('deploy-flow')?.entryId, scenario.expected);
+  const next = f.open('deploy-flow');
+  f.pending[2].resolve({applicationId:'deploy-flow'}); await next;
+  assert.equal(f.notifications.at(-1)?.entryId, scenario.expected, '再次激活只恢复成功入口');
+  f.open.dispose();
+});
+test('导航入口销毁后迟到成功不能恢复导航或发送激活', async () => {
+  const f = navigationFixture();
+  const task = f.open('deploy-flow', {entryId:'servers'});
+  f.open.dispose(); f.pending[0].resolve({applicationId:'deploy-flow'}); await task;
+  assert.equal(f.open.navigationOf('deploy-flow'), undefined);
+  assert.deepEqual(f.notifications, []);
+});
