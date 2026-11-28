@@ -1,5 +1,19 @@
 import {nextTick, ref} from 'vue';
 
+/** 隐藏的原生视图不产生动画帧，短定时回退保证已点击的请求仍可继续。 */
+function yieldForOpening() {
+  return new Promise<void>(resolve => {
+    let frame: number | undefined;
+    const finish = () => {
+      clearTimeout(timer);
+      if (frame !== undefined && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
+      resolve();
+    };
+    const timer = setTimeout(finish, 16);
+    frame = requestAnimationFrame(finish);
+  });
+}
+
 interface OpeningOptions {
   nameOf(id: string): string | undefined;
   showApplication(): void;
@@ -21,7 +35,7 @@ export function createDomApplicationOpening(options: OpeningOptions) {
     let task = tasks.get(key);
     if (!task) {
       task = nextTick()
-        .then(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())))
+        .then(yieldForOpening)
         .then(() => {if (!destroyed) return options.onOpen(id, entryId);});
       tasks.set(key, task);
       const release = () => {if (tasks.get(key) === task) tasks.delete(key);};

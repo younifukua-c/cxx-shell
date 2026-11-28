@@ -36,3 +36,16 @@ test('最新选择结束后，旧成功不能覆盖它的等待状态',async t=>
   f.pending[1].resolve(); await b; assert.equal(f.opening.name.value,undefined);
   f.opening.destroy();
 });
+
+test('隐藏页面不产生动画帧时仍及时打开，完成后不会迟到重开', async t => {
+  const original = globalThis.requestAnimationFrame;
+  let frame: FrameRequestCallback | undefined, calls = 0;
+  globalThis.requestAnimationFrame = callback => {frame=callback;return 1;};
+  t.after(()=>{globalThis.requestAnimationFrame=original;});
+  const opening=createDomApplicationOpening({nameOf:id=>id,showApplication(){},onOpen(){calls++;},onError:error=>{throw error;}});
+  await opening.open('deploy');
+  assert.equal(calls,1);
+  frame?.(0); await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(calls,1); assert.equal(opening.name.value,undefined);
+  opening.destroy();
+});
